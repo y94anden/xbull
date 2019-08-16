@@ -11,7 +11,10 @@ void uart_putc(unsigned char);
 unsigned int uart_available();
 
 // Return pointer to next character in receive buffer. Returns NULL if no
-// data is is available.
-unsigned char* uart_getc();     
+// data is is available within timeout ms.
+unsigned char* uart_getc(unsigned int timeout);
+
+// Send nullterminated string.
+void uart_puts(const char* str);
 
 #endif

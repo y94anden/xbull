@@ -1,4 +1,5 @@
 #include <avr/interrupt.h>
+#include <util/delay.h>
 
 #include "uart.h"
 #include "hardware.h"
@@ -31,7 +32,7 @@ void uart_setup() {
   // Enable receiver and transmitter and interrupts
   UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1 << RXCIE0);
 
-  // Set frame format: 8data, 1stop bit 
+  // Set frame format: 8data, 1stop bit
   UCSR0C = (3<<UCSZ00);
 }
 
@@ -68,6 +69,13 @@ void uart_putc(unsigned char byte) {
   }
 }
 
+void uart_puts(const char* str) {
+  while (*str) {
+    uart_putc(*str);
+    str++;
+  }
+}
+
 unsigned int uart_available() {
   unsigned int count;
 
@@ -78,18 +86,26 @@ unsigned int uart_available() {
   return count;
 }
 
-unsigned char* uart_getc() {
+unsigned char* uart_getc(unsigned int timeout) {
   unsigned int head;
   unsigned char *p;
 
   cli();
   head = rcvHead;
   sei();
-  if (head == rcvTail) {
-    // No data in buffer
-    return 0;
+  while (head == rcvTail) {
+    if (timeout == 0) {
+      // No data in buffer
+      return 0;
+    }
+    _delay_ms(1);
+    timeout--;
+
+    cli();
+    head = rcvHead;
+    sei();
   }
-  
+
   p = &rcvBuffer[rcvTail % RECV_BUFFER_LEN];
   rcvTail++;
 
@@ -102,7 +118,6 @@ unsigned char* uart_getc() {
 
   return p;
 }
-
 
 void uart_transmit() {
   // Put next byte in UART or stop transmission
@@ -122,7 +137,7 @@ void uart_transmit() {
     ;
   }
   */
-  
+
   // Put data into buffer, sends the data
   UDR0 = sndBuffer[sndTail % SEND_BUFFER_LEN];
 
