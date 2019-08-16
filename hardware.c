@@ -22,6 +22,10 @@ void led(int on) {
   }
 }
 
+uint8_t readled() {
+  return (PORTB &= (1 << 5)) >> 5;
+}
+
 void blink(unsigned int count) {
   while (count > 0) {
     led(1);

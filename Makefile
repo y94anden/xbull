@@ -16,7 +16,8 @@ all: $(PROJECT).hex
 OBJECTS = \
 	main.o \
 	hardware.o \
-	uart.o
+	uart.o \
+	bull.o
 
 
 AVRDUDE = avrdude -p m328p -c arduino -P ${PORT}
@@ -40,7 +41,7 @@ flash: $(PROJECT).hex
 	$(AVRDUDE) -U $(PROJECT).hex
 	touch flash
 
-terminal: 
+terminal:
 	$(AVRDUDE) -t
 
 disasm: $(PROJECT).elf
@@ -75,7 +76,7 @@ disasm: $(PROJECT).elf
 #
 
 fuses:
-	$(AVRDUDE) -U hfuse:w:0xcf:m -U lfuse:w:0x7f:m 
+	$(AVRDUDE) -U hfuse:w:0xcf:m -U lfuse:w:0x7f:m
 
 readcal:
 	$(AVRDUDE) -U calibration:r:/dev/stdout:i | head -1

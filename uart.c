@@ -9,8 +9,8 @@
 #define RECV_BUFFER_LEN 16
 #define SEND_BUFFER_LEN 16
 
-unsigned char rcvBuffer[RECV_BUFFER_LEN];
-unsigned char sndBuffer[SEND_BUFFER_LEN];
+uint8_t rcvBuffer[RECV_BUFFER_LEN];
+uint8_t sndBuffer[SEND_BUFFER_LEN];
 unsigned int sndHead;
 unsigned int sndTail;
 unsigned int rcvHead;
@@ -36,7 +36,7 @@ void uart_setup() {
   UCSR0C = (3<<UCSZ00);
 }
 
-void uart_putc(unsigned char byte) {
+void uart_putc(uint8_t byte) {
   unsigned int tail;
 
   // Busy-wait for room in the buffer
@@ -86,9 +86,9 @@ unsigned int uart_available() {
   return count;
 }
 
-unsigned char* uart_getc(unsigned int timeout) {
+uint8_t* uart_getc(unsigned int timeout) {
   unsigned int head;
-  unsigned char *p;
+  uint8_t *p;
 
   cli();
   head = rcvHead;

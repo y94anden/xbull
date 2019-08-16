@@ -3,10 +3,11 @@
 
 //#define F_CPU 16000000UL  /* Defined in Makefile */
 #include <avr/io.h>
-
+#include <stdint.h>
 
 void initPorts();
 void led(int on);
+uint8_t readled();
 void blink(unsigned int count);
 
 // Set direction pin for RS485 transciever
