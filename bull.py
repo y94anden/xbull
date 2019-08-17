@@ -1,13 +1,78 @@
 from serial import Serial
 from binascii import hexlify
+import time
+
+
+class Flasher:
+    Resp_STK_OK       =         0x10
+    Resp_STK_FAILED   =         0x11
+    Resp_STK_UNKNOWN  =         0x12
+    Resp_STK_NODEVICE =         0x13
+    Resp_STK_INSYNC   =         0x14
+    Resp_STK_NOSYNC   =         0x15
+
+    Parm_STK_SW_MAJOR =         0x81
+    Parm_STK_SW_MINOR =         0x82
+
+    def __init__(self, bull, address):
+        self.bull = bull
+        self.serial = bull.serial
+        self.address = address
+
+    def enter_programming_mode(self):
+        org_verbose = self.bull.verbose
+        self.bull.verbose = 0
+        self.bull.write(self.address, 0x04, 1)
+        self.bull.verbose = org_verbose
+
+    def leave_programming_mode(self):
+        self.serial.write(b'Q ')
+        self.read()  # Clear buffer
+
+    def read(self, length=None):
+        r = self.serial.read(length or 512) # length == None -> Extremly long
+        if length:
+            assert len(r) == length, 'Too short reply'
+
+        assert r[0] == self.Resp_STK_INSYNC, 'Response not in sync'
+        assert r[-1] == self.Resp_STK_OK, 'Response not OK'
+        return r
+
+    def read_bootloader_version(self):
+        self.enter_programming_mode();
+        time.sleep(0.2)
+
+        # Read signature
+        self.serial.write(b'u ');
+        r = self.read(5); # InSync, D1, D2, D3, OK
+        print('Signature bytes:', hexlify(r[1:4]).decode())
+
+        # Read SW Major version
+        self.serial.write(b'\x41\x81 ')  # Request SW Major version
+        r = self.read()
+        major = r[1]
+
+        # Read SW Minor version
+        self.serial.write(b'\x41\x82 ')  # Request SW Minorversion
+        r = self.read()
+        minor = r[1]
+
+        print('Optiboot version: %d.%d' % (major, minor))
+        self.leave_programming_mode()
+
 
 class Bull:
     def __init__(self, port):
-        self.serial = Serial(port, baudrate=19200)
+        self.serial = Serial(port, baudrate=115200)
         self.serial.timeout = 0.2
+        self.verbose = 1
 
     def __del__(self):
         self.serial.close()
+
+    def print(self, *args, **kwargs):
+        if self.verbose:
+            print(*args, **kwargs)
 
     def checksum(self, data):
         sum = 0;
@@ -24,7 +89,7 @@ class Bull:
     def serialRead(self):
         response = self.serial.read(260)
         if len(response) < 5:
-            print('Too short response:', self.hex(response))
+            self.print('Too short response:', self.hex(response))
             return
 
         address = response[0]
@@ -35,17 +100,17 @@ class Bull:
         checksum = response[-1]
 
         if self.checksum(response[:-1]) != checksum:
-            print('Bad checksum')
+            self.print('Bad checksum')
 
         if length + 5 != len(response):
-            print('Bad length of response')
+            self.print('Bad length of response')
 
-        print('Unit 0x%X responded' % address)
+        self.print('Unit 0x%X responded' % address)
 
         if command == 0xFF:
-            print('Error response:', data)
+            self.print('Error response:', data)
         else:
-            print('data:', self.hex(data))
+            self.print('data:', self.hex(data))
 
     def read(self, address, parameter):
         msg = bytes([address, 0x01, parameter, 0x00])

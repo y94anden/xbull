@@ -210,6 +210,10 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
       }
     }
     bull_data_reply(0x81, param, 0, 0);
+  } else if (param == 0x04) {
+    // Go into programming mode. All normal execution stops.
+    programming_mode();
+    bull_string_reply(0xFF, param, "Programming mode did not work");
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     if(bull_verify_length(param, len, 1)) {

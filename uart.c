@@ -4,7 +4,7 @@
 #include "uart.h"
 #include "hardware.h"
 
-#define BAUD 19200
+#define BAUD 115200
 
 #define RECV_BUFFER_LEN 16
 #define SEND_BUFFER_LEN 16
@@ -25,9 +25,12 @@ void uart_setup() {
   rcvTail = 0;
 
   // Set baudrate
-  unsigned int ubrr = F_CPU/16/BAUD - 1;
+  unsigned int ubrr = F_CPU/8/BAUD - 1;
   UBRR0H = ubrr >> 8;
   UBRR0L = ubrr & 0xFF;
+
+  // Set double speed mode
+  UCSR0A = (1 << U2X0);
 
   // Enable receiver and transmitter and interrupts
   UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1 << RXCIE0);

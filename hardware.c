@@ -45,7 +45,17 @@ void rs485_direction_in(){
   // TODO: Set direction pin
 }
 
-int rs485_is_sending() {
-  // TODO: Return true if direction pin is out
-  return 0;
+
+// Define a function that points to the bootloader location. The address
+// is hardcoded for a 512 byte bootloader.
+typedef void (*do_reboot_t)(void);
+const do_reboot_t do_reboot = (do_reboot_t)((FLASHEND-511)>>1);
+
+void programming_mode() {
+  // Turn off everything and jump to bootloader address
+  cli(); // Disable interrupts
+  // TOOD: Perhaps we need to reset some timer registers to default values?
+
+  MCUSR=0;
+  do_reboot();
 }
