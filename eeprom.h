@@ -3,6 +3,13 @@
 
 #include <stdint.h>
 
+// Usage of addresses in eeprom:
+//
+// 0x00 Address of device, 1 byte (bull.c)
+// 0x01 |
+// ...  | Mapped to parameters 0x10-0x1F, 1 byte per parameter (bull.c)
+// 0x11 |
+
 uint8_t eeReadByte(uint8_t* address);
 void eeWriteByte(uint8_t* address, uint8_t byte);
 #endif

@@ -13,6 +13,7 @@
 // 4+length: checksum
 
 uint8_t address;
+uint8_t bull_inhibit_response;
 
 int checksum_ok(uint8_t* data, unsigned int length);
 void bull_string_reply(uint8_t command, uint8_t param, const char* str);
@@ -55,6 +56,9 @@ void handle_bull(uint8_t* data, unsigned int length) {
     return;
   }
 
+  // We do not want to respond to broadcast
+  bull_inhibit_response = (data[0] == 0xFF);
+
   // Check the command
   switch(data[1]) {
   case 0x01: // read
@@ -78,6 +82,10 @@ int checksum_ok(uint8_t* data, unsigned int length) {
 }
 
 void bull_string_reply(uint8_t command, uint8_t param, const char* str) {
+  if (bull_inhibit_response) {
+    // We do not want to respond to broadcasts
+    return;
+  }
   unsigned int i;
   uint8_t sum = 0;
   uart_putc(address);
@@ -107,6 +115,10 @@ void bull_string_reply(uint8_t command, uint8_t param, const char* str) {
 
 void bull_data_reply(uint8_t command, uint8_t param, uint8_t len,
                      const uint8_t* data) {
+  if (bull_inhibit_response) {
+    // We do not want to respond to broadcasts
+    return;
+  }
   unsigned int i;
   uint8_t sum = 0;
   uart_putc(address);
@@ -156,6 +168,14 @@ uint8_t bull_verify_length(uint8_t param, uint8_t supplied, uint8_t expected) {
   return 0;
 }
 
+void ignore_traffic() {
+  // Ignore traffic until we receive no traffic within 5 seconds.
+  uint8_t *c = &address; // Initiate with any address.
+  while (c) {
+    c = uart_getc(5000);
+  }
+}
+
 void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
   if (param == 0x01) {
     // Address
@@ -174,6 +194,22 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
         blink(data[0]);
       }
     }
+  } else if (param == 0x03) {
+    // Ignore traffic until quiet for 5 seconds. If payload data is my address,
+    // keep listening. This is used to be able to send any binary data to one
+    // device while all others ignore it, such as during an upgrade.
+    if (bull_verify_length(param, len, 1)) {
+      if (data[0] == address || data[0] == 0xFF) {
+        // Even if this was a broadcast, we should respond. It was for us.
+        // It can also be for everyone to respond. That would only work with
+        // a single device.
+        bull_inhibit_response = 0;
+      } else {
+        // Not for us. Stop processing incoming traffic.
+        ignore_traffic();
+      }
+    }
+    bull_data_reply(0x81, param, 0, 0);
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     if(bull_verify_length(param, len, 1)) {
