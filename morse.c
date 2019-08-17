@@ -1,12 +1,12 @@
 #include "morse.h"
 #include <avr/pgmspace.h>
 
-#define mMaxSequenceLen 32 // Yields about factor 8/9 chars. 32 -> 28 characters.
+#define SEQUENCE_BUF 32 // Yields about factor 8/9 chars. 32 -> 28 characters.
 
 uint16_t mSequenceLen; // Current length of sequence
 uint16_t mSequencePos; // Current bit position in sequence
 uint8_t mRepeat;     // Should the sequence be repeted or stopped on last output
-uint8_t mSequence[mMaxSequenceLen];  // Each bit in sequence is led output
+uint8_t mSequence[SEQUENCE_BUF];  // Each bit in sequence is led output
 
 void morse_init() {
   morse_clear();
@@ -15,6 +15,7 @@ void morse_init() {
 
 uint8_t morse_getled() {
   if (mSequencePos >= mSequenceLen) {
+    // This is an indicator that we do not want to loop.
     return 0;
   }
 
@@ -49,7 +50,7 @@ void morse_repeat(uint8_t active) {
 
   // Do we need to reset the sequence?
   if (mRepeat) {
-    if (mSequencePos >= mMaxSequenceLen) {
+    if (mSequencePos >= mSequenceLen) {
       mSequencePos = 0;
     }
   }
@@ -66,7 +67,7 @@ void morse_clear() {
 
 //! Add a bit to the sequence. Return true if successful.
 uint8_t morse_add(uint8_t bit) {
-  if (mSequenceLen >= mMaxSequenceLen) {
+  if (mSequenceLen >= (SEQUENCE_BUF*8)) {
     return 0;
   }
 
@@ -181,7 +182,7 @@ uint8_t morse_character(char c) {
 void morse_say_P(const char* string_in_progmem) {
   uint8_t i = 0;
   char c;
-  
+
   morse_clear();
   c = pgm_read_byte(&string_in_progmem[i]);
   while (c) {
