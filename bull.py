@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from serial import Serial
 from binascii import hexlify
 from datetime import datetime
@@ -150,3 +152,24 @@ class Bull:
 
         data = struct.pack('I', newtime)
         self.write(address, 0x05, data)
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) not in [3, 4]:
+        print('Supply address, parameter on command line')
+        print('If a string of hex bytes is added, the parameter is written')
+        sys.exit(1)
+
+    address = int(sys.argv[1], 0)
+    param = int(sys.argv[2], 0)
+    method = 'Reading from'
+    data = None
+    if len(sys.argv) == 4:
+        data = b''.fromhex(sys.argv[3])
+        method = 'Writing to'
+
+    b = Bull('/dev/ttyUSB0')
+    if len(sys.argv) == 4:
+        b.write(address, param, data)
+    else:
+        b.read(address, param)
