@@ -11,6 +11,8 @@
 #define BUFSIZE 32
 uint8_t buffer[BUFSIZE];
 unsigned int bufpos;
+uint16_t time_ms = 0;
+uint32_t time_s = 0;
 
 int main(void)
 {
@@ -20,7 +22,7 @@ int main(void)
   initPorts();  // hardware.c
   uart_setup(); // uart.c
   bull_init();  // bull.c
-
+  initTimers(); //hardware.c
   sei(); //Enable interrupts.
 
   bufpos = 0;
@@ -37,5 +39,17 @@ int main(void)
       // No more data. Clear buffer.
       bufpos = 0;
     }
+  }
+}
+
+ISR(TIMER2_COMPA_vect) {
+  // Called with 1kHz
+  time_ms++;
+  if (time_ms >= 1000) {
+    time_s++;
+    time_ms = 0;
+    led(1);
+  } else if (time_ms == 100) {
+    led(0);
   }
 }

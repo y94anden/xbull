@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 void initPorts();
+void initTimers();
 void led(int on);
 uint8_t readled();
 void blink(unsigned int count);

@@ -15,6 +15,8 @@
 uint8_t address;
 uint8_t bull_inhibit_response;
 
+extern uint32_t time_s; // Defined in main.c
+
 int checksum_ok(uint8_t* data, unsigned int length);
 void bull_string_reply(uint8_t command, uint8_t param, const char* str);
 void bull_data_reply(uint8_t command, uint8_t param, uint8_t len,
@@ -150,6 +152,9 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
     // LED
     response = readled();
     bull_data_reply(0x01, param, 1, &response);
+  } else if (param == 0x05) {
+    // Time
+    bull_data_reply(0x01, param, 4, (uint8_t*)&time_s);
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     response = eeReadByte((uint8_t*)(param - 0x10 + 1));
@@ -214,6 +219,12 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
     // Go into programming mode. All normal execution stops.
     programming_mode();
     bull_string_reply(0xFF, param, "Programming mode did not work");
+  } else if (param == 0x05) {
+    // Time
+    if (bull_verify_length(param, len, 4)) {
+      time_s = *((uint32_t*)(data)); // Cast the four bytes to an int.
+      bull_data_reply(0x81, param, 0, 0);
+    }
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     if(bull_verify_length(param, len, 1)) {

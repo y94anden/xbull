@@ -1,9 +1,9 @@
 #include "hardware.h"
 
 #include <util/delay.h>
+#include <avr/interrupt.h>
 
-void initPorts()
-{
+void initPorts() {
   DDRB  = (1 << 5); // Pin 5 output = LED
   PORTB = 0;    // No pullup, output 0
 
@@ -12,6 +12,17 @@ void initPorts()
 
   DDRD  = 0x00; // All inputs
   PORTD = 0;    // No pullup
+}
+
+void initTimers() {
+  // Setup timer 2 as a 1kHz interrupt source.
+  // System clock is 16MHz
+  // Prescale with 128 => 125 kHz
+  // Have the timer overflow at 125 => 1kHz (clear timer on compare match)
+  TCCR2A = (1 << WGM21); // Waveform generation 010=Clear Timer on Compare match)
+  TCCR2B = (1 << CS22) | (1 << CS20); // Clock select 101. Prescaler 128.
+  OCR2A = 125; // Output compare A.
+  TIMSK2 = (1 << OCIE2A); // Output compare interrupt enable, A
 }
 
 void led(int on) {

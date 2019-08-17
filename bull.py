@@ -1,6 +1,8 @@
 from serial import Serial
 from binascii import hexlify
+from datetime import datetime
 import time
+import struct
 
 
 class Flasher:
@@ -112,12 +114,14 @@ class Bull:
         else:
             self.print('data:', self.hex(data))
 
+        return data
+
     def read(self, address, parameter):
         msg = bytes([address, 0x01, parameter, 0x00])
         msg += bytes([self.checksum(msg)]);
 
         self.serial.write(msg);
-        self.serialRead()
+        return self.serialRead()
 
     def write(self, address, parameter, value):
         if not isinstance(value, bytes):
@@ -126,4 +130,23 @@ class Bull:
         msg += bytes([self.checksum(msg)])
 
         self.serial.write(msg)
-        self.serialRead()
+        return self.serialRead()
+
+    def read_time(self, address):
+        org_verbose = self.verbose
+        self.verbose = 0
+        d = self.read(address, 0x05)
+        t = struct.unpack('I', d)[0]
+        dt = datetime.fromtimestamp(t)
+        print('Time is %d (%s)' % (t, dt.isoformat(' ')[:19]))
+        self.verbose = org_verbose
+        return dt
+
+    def write_time(self, address, newtime=None):
+        if newtime is None:
+            newtime = int(time.time())
+        elif isinstance(time, str):
+            newtime = datetime.fromisoformat(time)
+
+        data = struct.pack('I', newtime)
+        self.write(address, 0x05, data)
