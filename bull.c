@@ -3,6 +3,7 @@
 #include "hardware.h"
 #include "eeprom.h"
 #include "morse.h"
+#include "version.h"
 #include <stdint.h>
 #include <avr/pgmspace.h>
 
@@ -21,8 +22,14 @@ extern uint32_t time_s; // Defined in main.c
 void idler(void);       // Defined in main.c
 
 // Strings stored in flash
-const char strDEAF[]      PROGMEM = "DEAF";
-const char strLISTENING[] PROGMEM = "LISTENING";
+const char strDEAF[]                  PROGMEM = "DEAF";
+const char strLISTENING[]             PROGMEM = "LISTENING";
+const char strINVALID_PARAMETER[]     PROGMEM = "Invalid parameter";
+const char strBAD_CHECKSUM[]          PROGMEM = "Bad checksum";
+const char strUNHANDLED_COMMAND[]     PROGMEM = "Unhandled command";
+const char strINVALID_LENGTH[]        PROGMEM = "Invalid length";
+const char strPROGRAMMING_MODE_FAIL[] PROGMEM ="Programming mode did not work";
+
 
 int checksum_ok(uint8_t* data, unsigned int length);
 void bull_string_reply(uint8_t command, uint8_t param, const char* str);
@@ -60,7 +67,7 @@ void handle_bull(uint8_t* data, unsigned int length) {
   if (!checksum_ok(data, length)) {
     if (data[0] == address) {
       // This is for us, and we are expected to answer something. Error.
-      bull_string_reply(0xFF, 0x00, "Bad checksum");
+      bull_string_reply(0xFF, 0x00, strBAD_CHECKSUM);
     }
     return;
   }
@@ -77,7 +84,7 @@ void handle_bull(uint8_t* data, unsigned int length) {
     bull_handle_write(data[2], data[3], &data[4]);
     break;
   default:
-    bull_string_reply(0xFF, 0x00, "Unhandled command");
+    bull_string_reply(0xFF, 0x00, strUNHANDLED_COMMAND);
   }
 }
 
@@ -97,6 +104,7 @@ void bull_string_reply(uint8_t command, uint8_t param, const char* str) {
   }
   unsigned int i;
   uint8_t sum = 0;
+  char c;
   uart_putc(address);
   sum += address;
 
@@ -107,16 +115,20 @@ void bull_string_reply(uint8_t command, uint8_t param, const char* str) {
   sum += param;
 
   i = 0;
-  while(str[i] != 0 && i < 255) {
+  // Calculate length from progmem
+  while(pgm_read_byte(&(str[i])) != 0 && i < 255) {
     i++;
   }
   uart_putc(i);
   sum += i;
 
-  while(*str) {
-    uart_putc(*str);
-    sum += (*str);
-    str++;
+  // Add data from progmem
+  i = 0;
+  c = pgm_read_byte(&(str[i]));
+  while(c) {
+    uart_putc(c);
+    sum += (c);
+    c = pgm_read_byte(&(str[i]));
   }
 
   uart_putc(sum);
@@ -162,13 +174,16 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
   } else if (param == 0x05) {
     // Time
     bull_data_reply(0x01, param, 4, (uint8_t*)&time_s);
+  } else if (param == 0x06) {
+    // Version
+    bull_string_reply(0x01, param, strVERSION);
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     response = eeReadByte((uint8_t*)(param - 0x10 + 1));
     bull_data_reply(0x01, param, 1, &response);
   } else {
     // Invalid parameter
-    bull_string_reply(0xFF, param, "Invalid parameter");
+    bull_string_reply(0xFF, param, strINVALID_PARAMETER);
   }
 }
 
@@ -176,7 +191,7 @@ uint8_t bull_verify_length(uint8_t param, uint8_t supplied, uint8_t expected) {
   if (supplied == expected) {
     return 1;
   }
-  bull_string_reply(0xFF, param, "Invalid length");
+  bull_string_reply(0xFF, param, strINVALID_LENGTH);
   return 0;
 }
 
@@ -227,7 +242,7 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
   } else if (param == 0x04) {
     // Go into programming mode. All normal execution stops.
     programming_mode();
-    bull_string_reply(0xFF, param, "Programming mode did not work");
+    bull_string_reply(0xFF, param, strPROGRAMMING_MODE_FAIL);
   } else if (param == 0x05) {
     // Time
     if (bull_verify_length(param, len, 4)) {
@@ -242,6 +257,6 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
     }
   } else {
     // Invalid parameter
-    bull_string_reply(0xFF, param, "Invalid parameter");
+    bull_string_reply(0xFF, param, strINVALID_PARAMETER);
   }
 }

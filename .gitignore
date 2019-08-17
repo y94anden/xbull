@@ -4,3 +4,5 @@
 *.hex
 flash
 __pycache__/
+ver.c
+.deps/
