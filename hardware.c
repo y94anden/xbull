@@ -67,6 +67,12 @@ void programming_mode() {
   cli(); // Disable interrupts
   // TOOD: Perhaps we need to reset some timer registers to default values?
 
+  // Assumptions from the optiboot.c comment
+  //     No interrupts can occur
+  //     UART and Timer 1 are set to their reset state
+  //     SP points to RAMEND
+  SP = RAMEND;
+
   MCUSR=0;
   do_reboot();
 }

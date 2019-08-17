@@ -194,7 +194,7 @@ void bull_version_reply() {
   }
 
   uart_putc(sum);
-  
+
 }
 
 void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
