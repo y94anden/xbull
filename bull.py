@@ -8,15 +8,22 @@ import struct
 
 
 class Flasher:
-    Resp_STK_OK       =         0x10
-    Resp_STK_FAILED   =         0x11
-    Resp_STK_UNKNOWN  =         0x12
-    Resp_STK_NODEVICE =         0x13
-    Resp_STK_INSYNC   =         0x14
-    Resp_STK_NOSYNC   =         0x15
+    Resp_STK_OK             =   0x10
+    Resp_STK_FAILED         =   0x11
+    Resp_STK_UNKNOWN        =   0x12
+    Resp_STK_NODEVICE       =   0x13
+    Resp_STK_INSYNC         =   0x14
+    Resp_STK_NOSYNC         =   0x15
 
-    Parm_STK_SW_MAJOR =         0x81
-    Parm_STK_SW_MINOR =         0x82
+    Parm_STK_SW_MAJOR       =   0x81
+    Parm_STK_SW_MINOR       =   0x82
+
+    Cmnd_STK_LOAD_ADDRESS   =   0x55
+    Cmnd_STK_PROG_PAGE      =   0x64  # Flash only. Max 256 bytes per write.
+    Cmnd_STK_READ_PAGE      =   0x74  # Flash only. Max 256 bytes per read.
+    Cmnd_STK_READ_SIGN      =   0x75
+    Cmnd_STK_LEAVE_PROGMODE =   0x51
+    Cmnd_STK_GET_PARAMETER  =   0x41
 
     def __init__(self, bull, address):
         self.bull = bull
