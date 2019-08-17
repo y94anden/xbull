@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+// Type of idler function that is called while waiting for uart receive timeout
+typedef void (*idler_t)(void);
+
 // Setup port with interrupts, baudrate etc
 void uart_setup();
 
@@ -14,7 +17,7 @@ unsigned int uart_available();
 
 // Return pointer to next character in receive buffer. Returns NULL if no
 // data is is available within timeout ms.
-uint8_t* uart_getc(unsigned int timeout);
+uint8_t* uart_getc(unsigned int timeout, idler_t idler);
 
 // Send nullterminated string.
 void uart_puts(const char* str);

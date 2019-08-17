@@ -16,6 +16,8 @@ unsigned int sndTail;
 unsigned int rcvHead;
 unsigned int rcvTail;
 
+extern uint16_t countdown_timer; // From main.c
+
 void uart_transmit();
 
 void uart_setup() {
@@ -89,23 +91,26 @@ unsigned int uart_available() {
   return count;
 }
 
-uint8_t* uart_getc(unsigned int timeout) {
+uint8_t* uart_getc(unsigned int timeout, idler_t idler) {
   unsigned int head;
   uint8_t *p;
-
+  uint8_t done = 0;
   cli();
   head = rcvHead;
+  countdown_timer = timeout;
   sei();
   while (head == rcvTail) {
-    if (timeout == 0) {
+    if (done) {
       // No data in buffer
       return 0;
     }
-    _delay_ms(1);
-    timeout--;
+    if (idler) {
+      idler();
+    }
 
     cli();
     head = rcvHead;
+    done = (countdown_timer == 0);
     sei();
   }
 

@@ -18,6 +18,7 @@ uint8_t address;
 uint8_t bull_inhibit_response;
 
 extern uint32_t time_s; // Defined in main.c
+void idler(void);       // Defined in main.c
 
 // Strings stored in flash
 const char strDEAF[]      PROGMEM = "DEAF";
@@ -181,12 +182,12 @@ uint8_t bull_verify_length(uint8_t param, uint8_t supplied, uint8_t expected) {
 
 void ignore_traffic() {
   // Ignore traffic until we receive no traffic within 5 seconds.
-  morse_say(strDEAF);
+  morse_say_P(strDEAF);
   uint8_t *c = &address; // Initiate with any address.
   while (c) {
-    c = uart_getc(5000);
+    c = uart_getc(5000, idler);
   }
-  morse_say(strLISTENING);
+  morse_say_P(strLISTENING);
 }
 
 void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {

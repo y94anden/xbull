@@ -15,10 +15,16 @@ uint8_t buffer[BUFSIZE];
 unsigned int bufpos;
 uint16_t time_ms = 0;
 uint32_t time_s = 0;
-
+uint32_t countdown_timer = 0;
 
 // Strings stored in flash
 const char strHELLO[] PROGMEM = "HELLO";
+
+void idler(void) {
+  // This function is run when uart_getc is idling
+  led(morse_getled());
+}
+
 
 int main(void)
 {
@@ -34,9 +40,9 @@ int main(void)
 
   bufpos = 0;
 
-  morse_say(strHELLO);
+  morse_say_P(strHELLO);
   for (;;) {
-    c = uart_getc(500);
+    c = uart_getc(500, idler);
     if (c) {
       buffer[bufpos] = *c;
       bufpos++;
@@ -60,6 +66,10 @@ ISR(TIMER2_COMPA_vect) {
   }
 
   if (time_ms % 100 == 0) {
-    led(morse_tick());
+    morse_tick();
+  }
+
+  if (countdown_timer) {
+    countdown_timer--;
   }
 }
