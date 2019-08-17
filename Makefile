@@ -32,10 +32,11 @@ $(OBJECTS): | $(DEPDIR)
 
 $(DEPDIR): ; @mkdir -p $@
 
-DEPFILES := $(SRCS:%.c=$(DEPDIR)/%.d
+DEPFILES := $(SRCS:%.c=$(DEPDIR)/%.d)
 $(DEPFILES):
 
 include $(wildcard $(DEPFILES))
+
 
 # end autodependencies...
 
