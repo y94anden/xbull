@@ -17,7 +17,8 @@ OBJECTS = \
 	main.o \
 	hardware.o \
 	uart.o \
-	bull.o
+	bull.o \
+	eeprom.o
 
 
 AVRDUDE = avrdude -p m328p -c arduino -P ${PORT}

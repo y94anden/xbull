@@ -6,6 +6,9 @@ class Bull:
         self.serial = Serial(port, baudrate=19200)
         self.serial.timeout = 0.2
 
+    def __del__(self):
+        self.serial.close()
+
     def checksum(self, data):
         sum = 0;
         for d in data:
@@ -36,6 +39,8 @@ class Bull:
 
         if length + 5 != len(response):
             print('Bad length of response')
+
+        print('Unit 0x%X responded' % address)
 
         if command == 0xFF:
             print('Error response:', data)

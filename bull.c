@@ -1,6 +1,7 @@
 #include "bull.h"
 #include "uart.h"
 #include "hardware.h"
+#include "eeprom.h"
 #include <stdint.h>
 
 // A bull message consists of the following bytes:
@@ -12,7 +13,6 @@
 // 4+length: checksum
 
 uint8_t address;
-uint8_t parameters[0x10];
 
 int checksum_ok(uint8_t* data, unsigned int length);
 void bull_string_reply(uint8_t command, uint8_t param, const char* str);
@@ -22,7 +22,11 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data);
 void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data);
 
 void bull_init() {
-  address = 0x73;
+  address = eeReadByte(0);
+  if (address == 0xFF) {
+    // When eeprom is cleared, it reads as FF. Set our address to 0 if so.
+    address = 0;
+  }
 }
 
 int is_bull(uint8_t* data, unsigned int length) {
@@ -135,8 +139,9 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
     response = readled();
     bull_data_reply(0x01, param, 1, &response);
   } else if (param >= 0x10 && param < 0x20) {
-    // RAM parameters
-    bull_data_reply(0x01, param, 1, &parameters[param-0x10]);
+    // EEPROM parameters
+    response = eeReadByte((uint8_t*)(param - 0x10 + 1));
+    bull_data_reply(0x01, param, 1, &response);
   } else {
     // Invalid parameter
     bull_string_reply(0xFF, param, "Invalid parameter");
@@ -156,6 +161,7 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
     // Address
     if (bull_verify_length(param, len, 1)) {
       address = data[0];
+      eeWriteByte((uint8_t*)0, address);
       bull_data_reply(0x81, param, 0, 0);
     }
   } else if (param == 0x02) {
@@ -169,9 +175,9 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
       }
     }
   } else if (param >= 0x10 && param < 0x20) {
-    // RAM parameters
+    // EEPROM parameters
     if(bull_verify_length(param, len, 1)) {
-      parameters[param-0x10] = data[0];
+      eeWriteByte((uint8_t*)(param - 0x10 + 1), data[0]);
       bull_data_reply(0x81, param, 0, 0);
     }
   } else {
