@@ -51,18 +51,13 @@ $(PROJECT).hex: $(PROJECT).elf
 # containing versioning information. This file will only be created
 # if something else was rebuilt.
 $(PROJECT).elf: $(OBJECTS)
-	echo "Buildning new version file"
-	@echo "#include <avr/pgmspace.h>" > ver.c
-	@echo -n "const char strVERSION[] PROGMEM = \"" >> ver.c
-	@date +"%Y-%m-%d %H:%M:%S " | tr -d "\n" >> ver.c
-	@git describe --match=NeVeRmAtCh --always --dirty | tr -d "\n" >> ver.c
-	@echo '";' >> ver.c
-	@$(CC) $(CFLAGS) -c ver.c -o ver.o
-	$(CC) $(CFLAGS) -o $@ $(OBJECTS) ver.o $(LDFLAGS)
+	./setversion.sh
+	@$(CC) $(CFLAGS) -c version.c -o version.o
+	$(CC) $(CFLAGS) -o $@ $(OBJECTS) version.o $(LDFLAGS)
 
 clean:
 	rm -rf $(DEPDIR)
-	rm -f *.o *.hex *.elf ver.c
+	rm -f *.o *.hex *.elf version.c
 
 erase:
 	$(AVRDUDE)  -e

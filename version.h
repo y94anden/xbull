@@ -1,10 +1,9 @@
 #ifndef VERSION_H__
 #define VERSION_H__
 
-#include <avr/pgmspace.h>
+#include <stdint.h>
 
-// The below variable is defined in ver.c that is automatically
-// created when linking
-extern const char* strVERSION;
+uint8_t version_length();
+uint8_t version_char(uint8_t pos);
 
 #endif

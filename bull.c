@@ -22,13 +22,15 @@ extern uint32_t time_s; // Defined in main.c
 void idler(void);       // Defined in main.c
 
 // Strings stored in flash
-const char strDEAF[]                  PROGMEM = "DEAF";
-const char strLISTENING[]             PROGMEM = "LISTENING";
+const char strDEAF[]                  PROGMEM = "Deaf";
+const char strLISTENING[]             PROGMEM = "Listening";
 const char strINVALID_PARAMETER[]     PROGMEM = "Invalid parameter";
 const char strBAD_CHECKSUM[]          PROGMEM = "Bad checksum";
 const char strUNHANDLED_COMMAND[]     PROGMEM = "Unhandled command";
 const char strINVALID_LENGTH[]        PROGMEM = "Invalid length";
-const char strPROGRAMMING_MODE_FAIL[] PROGMEM ="Programming mode did not work";
+const char strPROGRAMMING_MODE_FAIL[] PROGMEM = "Failed programming mode";
+
+const char strVERSION2[] = "dirty";
 
 
 int checksum_ok(uint8_t* data, unsigned int length);
@@ -128,6 +130,7 @@ void bull_string_reply(uint8_t command, uint8_t param, const char* str) {
   while(c) {
     uart_putc(c);
     sum += (c);
+    i++;
     c = pgm_read_byte(&(str[i]));
   }
 
@@ -162,6 +165,38 @@ void bull_data_reply(uint8_t command, uint8_t param, uint8_t len,
   uart_putc(sum);
 }
 
+void bull_version_reply() {
+  if (bull_inhibit_response) {
+    // We do not want to respond to broadcasts
+    return;
+  }
+  uint8_t i;
+  uint8_t length;
+  uint8_t sum = 0;
+  uint8_t c;
+  uart_putc(address);
+  sum += address;
+
+  uart_putc(0x01); // Command = read
+  sum += 0x01;
+
+  uart_putc(0x06); // Parameter = 0x06
+  sum += 0x06;
+
+  length = version_length();
+  uart_putc(length);
+  sum += length;
+
+  for (i = 0; i < length; i++) {
+    c = version_char(i);
+    uart_putc(c);
+    sum += c;
+  }
+
+  uart_putc(sum);
+  
+}
+
 void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
   uint8_t response;
   if (param == 0x01) {
@@ -176,7 +211,7 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
     bull_data_reply(0x01, param, 4, (uint8_t*)&time_s);
   } else if (param == 0x06) {
     // Version
-    bull_string_reply(0x01, param, strVERSION);
+    bull_version_reply();
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     response = eeReadByte((uint8_t*)(param - 0x10 + 1));
