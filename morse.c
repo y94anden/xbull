@@ -1,7 +1,7 @@
 #include "morse.h"
 #include <avr/pgmspace.h>
 
-#define mMaxSequenceLen 128
+#define mMaxSequenceLen 32 // Yields about factor 8/9 chars. 32 -> 28 characters.
 
 uint16_t mSequenceLen; // Current length of sequence
 uint16_t mSequencePos; // Current bit position in sequence
