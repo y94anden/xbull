@@ -6,3 +6,4 @@ flash
 __pycache__/
 .deps/
 version.c
+flash_boot

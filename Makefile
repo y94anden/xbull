@@ -1,6 +1,5 @@
 PROJECT=xbull
 
-
 MCU=atmega328p
 F_CPU=16000000
 PORT=/dev/ttyUSB0
@@ -42,7 +41,7 @@ include $(wildcard $(DEPFILES))
 
 
 AVRDUDE = avrdude -p m328p -c arduino -P ${PORT}
-
+AVRDUDE_ISP = avrdude -p m328p -c usbasp
 
 $(PROJECT).hex: $(PROJECT).elf
 	avr-objcopy -O ihex  -R .eeprom $< $@
@@ -55,56 +54,75 @@ $(PROJECT).elf: $(OBJECTS)
 	@$(CC) $(CFLAGS) -c version.c -o version.o
 	$(CC) $(CFLAGS) -o $@ $(OBJECTS) version.o $(LDFLAGS)
 
+.PHONY: clean
 clean:
 	rm -rf $(DEPDIR)
 	rm -f *.o *.hex *.elf version.c
 
+.PHONY: erase
 erase:
-	$(AVRDUDE)  -e
+	$(AVRDUDE_ISP)  -e
 
 flash: $(PROJECT).hex
 	$(AVRDUDE) -U $(PROJECT).hex
 	touch flash
 
+flash_boot: optiboot_atmega328.hex
+	$(AVRDUDE_ISP) -U optiboot_atmega328.hex
+	touch flash_boot
+
+.PHONY: terminal
 terminal:
 	$(AVRDUDE) -t
 
+.PHONY: disasm
 disasm: $(PROJECT).elf
 	avr-objdump -d $<
 
 
-# Atmega8 fuses
+# Atmega328p fuses
 #
 # Fuse high byte
 # 7 6 5 4 3 2 1 0
-# 1 1 0 0 1 1 1 1  =  0xCF
+# 1 1 0 1 1 1 1 0  =  0xde
 # ^ ^ ^ ^ ^ \+/ ^
 # | | | | |  |  |
 # | | | | |  |  +----- BOOTRST  (Select reset vector)
-# | | | | |  +-------- BOOTSZ   (Boot size. 00=small, 11=big)
+# | | | | |  +-------- BOOTSZ   (Boot size. 00=bit, 11=small)
 # | | | | +----------- EESAVE   (EEProm preserved through chip erase)
-# | | | +------------- CKOPT    (Oscillator options. 0 = rail_to_rail)
+# | | | +------------- WDTON    (Watchdog always on)
 # | | +--------------- SPIEN    (SPI Enable - serial programming)
-# | +----------------- WDTON    (Watchdog always on)
+# | +----------------- DWEN     (debugWire enable)
 # +------------------- RSTDISBL (Reset disable)
 
 
 # Fuse low byte
 # 7 6 5 4 3 2 1 0
-# 0 1 1 1 1 1 1 1  =  0x7F
+# 1 1 1 1 0 1 1 1  =  0xf7
 # ^ ^ \+/ \--+--/
 # | |  |     |
 # | |  |     +-------- CKSEL    (Clock source select)
 # | |  +-------------- SUT      (Select startup time)
-# | +----------------- BODEN    (Brown out detector enable)
-# +------------------- BODLEVEL (Brown out detector level. 0 on atmega8)
+# | +----------------- CKOUT    (Clock output)
+# +------------------- CKDIV8   (Divide clock by 8)
 #
 
+# Fuse extended byte
+# 7 6 5 4 3 2 1 0
+# 1 1 1 1 1 1 0 1  =  0xfd
+#           \-+-/
+#             |
+#             +------- BODLEVEL
+
+
+.PHONY: fuses
 fuses:
-	$(AVRDUDE) -U hfuse:w:0xcf:m -U lfuse:w:0x7f:m
+	$(AVRDUDE_ISP) -U hfuse:w:0xde:m -U lfuse:w:0xf7:m -U efuse:w:0xfd:m
 
+.PHONY: readcal
 readcal:
-	$(AVRDUDE) -U calibration:r:/dev/stdout:i | head -1
+	$(AVRDUDE_ISP) -U calibration:r:/dev/stdout:i | head -1
 
+.PHONY: size
 size: $(PROJECT).elf
 	avr-size $<
