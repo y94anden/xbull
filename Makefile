@@ -7,7 +7,7 @@ PORT=/dev/ttyUSB0
 
 
 CC=avr-gcc
-CFLAGS=-Wall -Werror -Os -I. -mmcu=${MCU} -DF_CPU=${F_CPU}
+CFLAGS=-Wall -Werror -Os -mmcu=${MCU} -DF_CPU=${F_CPU}
 
 
 all: $(PROJECT).hex
