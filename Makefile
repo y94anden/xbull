@@ -18,17 +18,18 @@ OBJECTS = \
 	hardware.o \
 	uart.o \
 	bull.o \
-	eeprom.o
+	eeprom.o \
+	morse.o
 
 
 AVRDUDE = avrdude -p m328p -c arduino -P ${PORT}
 
 
 $(PROJECT).hex: $(PROJECT).elf
-	avr-objcopy -O ihex  -R .eeprom $(PROJECT).elf $(PROJECT).hex
+	avr-objcopy -O ihex  -R .eeprom $< $@
 
 $(PROJECT).elf: $(OBJECTS)
-	$(CC) $(CFLAGS) -o $(PROJECT).elf $(OBJECTS)
+	$(CC) $(CFLAGS) -o $@ $(OBJECTS) $(LDFLAGS)
 
 
 
@@ -46,7 +47,7 @@ terminal:
 	$(AVRDUDE) -t
 
 disasm: $(PROJECT).elf
-	avr-objdump -d $(PROJECT).elf
+	avr-objdump -d $<
 
 
 # Atmega8 fuses
@@ -83,4 +84,4 @@ readcal:
 	$(AVRDUDE) -U calibration:r:/dev/stdout:i | head -1
 
 size: $(PROJECT).elf
-	avr-size $(PROJECT).elf
+	avr-size $<

@@ -2,7 +2,9 @@
 #include "uart.h"
 #include "hardware.h"
 #include "eeprom.h"
+#include "morse.h"
 #include <stdint.h>
+#include <avr/pgmspace.h>
 
 // A bull message consists of the following bytes:
 // 0: address
@@ -16,6 +18,10 @@ uint8_t address;
 uint8_t bull_inhibit_response;
 
 extern uint32_t time_s; // Defined in main.c
+
+// Strings stored in flash
+const char strDEAF[]      PROGMEM = "DEAF";
+const char strLISTENING[] PROGMEM = "LISTENING";
 
 int checksum_ok(uint8_t* data, unsigned int length);
 void bull_string_reply(uint8_t command, uint8_t param, const char* str);
@@ -175,10 +181,12 @@ uint8_t bull_verify_length(uint8_t param, uint8_t supplied, uint8_t expected) {
 
 void ignore_traffic() {
   // Ignore traffic until we receive no traffic within 5 seconds.
+  morse_say(strDEAF);
   uint8_t *c = &address; // Initiate with any address.
   while (c) {
     c = uart_getc(5000);
   }
+  morse_say(strLISTENING);
 }
 
 void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
