@@ -4,7 +4,10 @@
 #include <avr/interrupt.h>
 
 void initPorts() {
-  DDRB  = (1 << 5); // Pin 5 output = LED
+  DDRB  =
+    (1 << 5) | // Pin 5 output = LED
+    (1 << 6);  // Pin 6 output = WS1812b led chain
+
   PORTB = 0;    // No pullup, output 0
 
   DDRC  = 0x00; // All inputs
