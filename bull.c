@@ -30,8 +30,6 @@ const char strUNHANDLED_COMMAND[]     PROGMEM = "Unhandled command";
 const char strINVALID_LENGTH[]        PROGMEM = "Invalid length";
 const char strPROGRAMMING_MODE_FAIL[] PROGMEM = "Failed programming mode";
 
-const char strVERSION2[] = "dirty";
-
 
 int checksum_ok(uint8_t* data, unsigned int length);
 void bull_string_reply(uint8_t command, uint8_t param, const char* str);
