@@ -11,10 +11,10 @@
 
 uint8_t rcvBuffer[RECV_BUFFER_LEN];
 uint8_t sndBuffer[SEND_BUFFER_LEN];
-unsigned int sndHead;
-unsigned int sndTail;
-unsigned int rcvHead;
-unsigned int rcvTail;
+uint8_t sndHead;
+uint8_t sndTail;
+uint8_t rcvHead;
+uint8_t rcvTail;
 
 extern uint16_t countdown_timer; // From main.c
 
@@ -42,16 +42,14 @@ void uart_setup() {
 }
 
 void uart_putc(uint8_t byte) {
-  unsigned int tail;
+  uint8_t tail;
 
   // Busy-wait for room in the buffer
-  led(1);
   do {
     cli(); // sndTail is moved by interrupt. Disable temporarily.
     tail = sndTail;
     sei();
   } while (sndHead - tail >= SEND_BUFFER_LEN);
-  led(0);
 
   sndBuffer[sndHead % SEND_BUFFER_LEN] = byte;
   sndHead++;
@@ -81,8 +79,8 @@ void uart_puts(const char* str) {
   }
 }
 
-unsigned int uart_available() {
-  unsigned int count;
+uint8_t uart_available() {
+  uint8_t count;
 
   cli();
   count = rcvHead - rcvTail;
@@ -92,7 +90,7 @@ unsigned int uart_available() {
 }
 
 uint8_t* uart_getc(unsigned int timeout, idler_t idler) {
-  unsigned int head;
+  uint8_t head;
   uint8_t *p;
   uint8_t done = 0;
   cli();

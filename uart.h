@@ -13,7 +13,7 @@ void uart_setup();
 void uart_putc(uint8_t);
 
 // Return number of bytes waiting in receive buffer
-unsigned int uart_available();
+uint8_t uart_available();
 
 // Return pointer to next character in receive buffer. Returns NULL if no
 // data is is available within timeout ms.
