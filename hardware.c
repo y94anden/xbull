@@ -25,6 +25,41 @@ void initTimers() {
   TIMSK2 = (1 << OCIE2A); // Output compare interrupt enable, A
 }
 
+void clearTimers() {
+  TCCR0A = 0;
+  TCCR0B = 0;
+  TCNT0 = 0;
+  OCR0A = 0;
+  OCR0B = 0;
+  TIMSK0 = 0;
+  TIFR0 = 0;
+
+  TCCR1A = 0;
+  TCCR1B = 0;
+  TCCR1C = 0;
+  TCNT1H = 0; // High must be written first
+  TCNT1L = 0;
+  OCR1AH = 0; // High must be written first
+  OCR1AL = 0;
+  OCR1BH = 0; // High must be written first
+  OCR1BL = 0;
+  ICR1H = 0; // High must be written first
+  ICR1L = 0;
+  TIMSK1 = 0;
+  TIFR1 = 0;
+
+  ASSR = 0;
+  GTCCR = 0;
+
+  TCCR2A = 0;
+  TCCR2B = 0;
+  TCNT2 = 0;
+  OCR2A = 0;
+  OCR2B = 0;
+  TIMSK2 = 0;
+  TIFR2 = 0;
+}
+
 void led(int on) {
   if (on) {
     PORTB |= (1 << 5);
@@ -63,16 +98,28 @@ typedef void (*do_reboot_t)(void);
 const do_reboot_t do_reboot = (do_reboot_t)((FLASHEND-511)>>1);
 
 void programming_mode() {
-  // Turn off everything and jump to bootloader address
-  cli(); // Disable interrupts
-  // TOOD: Perhaps we need to reset some timer registers to default values?
-
   // Assumptions from the optiboot.c comment
   //     No interrupts can occur
   //     UART and Timer 1 are set to their reset state
   //     SP points to RAMEND
+
+   // Disable interrupts
+  cli();
+
+  // Clear UART
+  UCSR0A = 0x20;
+  UCSR0B = 0;
+  UCSR0C = 0x06;
+  UBRR0H = 0;
+  UBRR0L = 0;
+
+  clearTimers();
+
+  // Move stackpointer to end of RAM
   SP = RAMEND;
 
+  // Clear reset reason
   MCUSR=0;
+
   do_reboot();
 }
