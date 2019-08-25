@@ -294,6 +294,7 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
     for(i = 0; i < len; i += 3) {
       wsled_color(data[i], data[i+1], data[i+2]);
     }
+    bull_data_reply(0x81, param, 0,0);
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     if(bull_verify_length(param, len, 1)) {
