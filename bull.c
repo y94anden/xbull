@@ -4,6 +4,7 @@
 #include "eeprom.h"
 #include "morse.h"
 #include "version.h"
+#include "ws2812b_led.h"
 #include <stdint.h>
 #include <avr/pgmspace.h>
 
@@ -29,7 +30,8 @@ const char strBAD_CHECKSUM[]          PROGMEM = "Bad checksum";
 const char strUNHANDLED_COMMAND[]     PROGMEM = "Unhandled command";
 const char strINVALID_LENGTH[]        PROGMEM = "Invalid length";
 const char strPROGRAMMING_MODE_FAIL[] PROGMEM = "Failed programming mode";
-
+const char strLENGTH_MULTIPLE_OF_THREE[] PROGMEM =
+  "Length must be a multiple of three";
 
 int checksum_ok(uint8_t* data, unsigned int length);
 void bull_string_reply(uint8_t command, uint8_t param, const char* str);
@@ -239,6 +241,7 @@ void ignore_traffic() {
 }
 
 void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
+  uint16_t i;
   if (param == 0x01) {
     // Address
     if (bull_verify_length(param, len, 1)) {
@@ -281,6 +284,15 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
     if (bull_verify_length(param, len, 4)) {
       time_s = *((uint32_t*)(data)); // Cast the four bytes to an int.
       bull_data_reply(0x81, param, 0, 0);
+    }
+  } else if (param == 0x07) {
+    // NeoPixel write
+    if(len == 0 || (len % 3) != 0) {
+      bull_string_reply(0xFF, param, strLENGTH_MULTIPLE_OF_THREE);
+      return;
+    }
+    for(i = 0; i < len; i += 3) {
+      wsled_color(data[i], data[i+1], data[i+2]);
     }
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
