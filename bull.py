@@ -75,7 +75,7 @@ class Flasher:
 class Bull:
     def __init__(self, port):
         self.serial = Serial(port, baudrate=115200)
-        self.serial.timeout = 0.02
+        self.serial.timeout = 2
         self.verbose = 0
 
     def __del__(self):
@@ -100,7 +100,7 @@ class Bull:
             return '0x%s' % hexlify(data).decode()
 
     def serialRead(self):
-        response = self.serial.read(260)
+        response = self.serial.read(5)
         if len(response) < 5:
             self.print('Too short response:', self.escape(response))
             return
@@ -109,6 +109,8 @@ class Bull:
         command = response[1]
         parameter = response[2]
         length = response[3]
+        if length > 0:
+            response += self.serial.read(length)
         data = response[4:-1]
         checksum = response[-1]
 
@@ -175,7 +177,6 @@ if __name__ == '__main__':
     data = None
     if len(sys.argv) >= 4:
         data = b''.fromhex(''.join(sys.argv[3:]))
-        print(data)
         method = 'Writing to'
 
     b = Bull('/dev/ttyUSB0')
