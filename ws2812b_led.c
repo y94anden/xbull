@@ -1,5 +1,6 @@
 #include "ws2812b_led.h"
 #include "hardware.h"
+#include <avr/interrupt.h>
 
 /*
 Module to handle adressable leds
@@ -59,18 +60,14 @@ void wsled_sendBitZero() {
   // we spend at least 8 cycles, but with interrupts enabled. Note that the
   // calling function will use some clock cycles for looping etc as well.
 
-  // PortB is register $05
-  // Pin 6 is supposed to be connected to ws2812b.
+  // PortC is register $08
+  // Pin 5 is supposed to be connected to ws2812b.
   asm volatile("cli"           "\n\t"
-               "sbi 5,6"       "\n\t"
+               "sbi 8,5"       "\n\t"
                "nop"           "\n\t"
                "nop"           "\n\t"
-               "nop"           "\n\t"
-               "cbi 5,6"       "\n\t"
+               "cbi 8,5"       "\n\t"
                "sei"           "\n\t"
-               "nop"           "\n\t"
-               "nop"           "\n\t"
-               "nop"           "\n\t"
                "nop"           "\n\t"
                "nop"           "\n\t"
                "nop"           "\n\t"
@@ -84,7 +81,7 @@ void wsled_sendBitOne() {
 
   // PortB is register $05
   // Pin 6 is supposed to be connected to ws2812b.
-  asm volatile("sbi 5, 6"      "\n\t"
+  asm volatile("sbi 8, 5"      "\n\t"
                "nop"           "\n\t"
                "nop"           "\n\t"
                "nop"           "\n\t"
@@ -94,9 +91,7 @@ void wsled_sendBitOne() {
                "nop"           "\n\t"
                "nop"           "\n\t"
                "nop"           "\n\t"
-               "cbi 5,6"       "\n\t"
-               "nop"           "\n\t"
-               "nop"           "\n\t"
+               "cbi 8,5"       "\n\t"
                "nop"           "\n\t"
                "nop"           "\n\t"
                "nop"           "\n\t"
@@ -109,9 +104,9 @@ void wsled_sendByte(uint8_t byte) {
   // Bits should be sent with high bit first.
   for (i = 0; i < 8; i++) {
     if(byte & 0x80) {
-      wsled_sendBitZero();
-    } else {
       wsled_sendBitOne();
+    } else {
+      wsled_sendBitZero();
     }
     byte <<= 1;
   }

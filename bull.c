@@ -23,6 +23,7 @@ extern uint32_t time_s; // Defined in main.c
 void idler(void);       // Defined in main.c
 
 // Strings stored in flash
+const char strOK[]                    PROGMEM = "OK";
 const char strDEAF[]                  PROGMEM = "Deaf";
 const char strLISTENING[]             PROGMEM = "Listening";
 const char strINVALID_PARAMETER[]     PROGMEM = "Invalid parameter";
@@ -294,6 +295,7 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
     for(i = 0; i < len; i += 3) {
       wsled_color(data[i], data[i+1], data[i+2]);
     }
+    bull_string_reply(0x81, param, strOK);
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     if(bull_verify_length(param, len, 1)) {

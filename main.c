@@ -7,6 +7,7 @@
 #include "uart.h"
 #include "bull.h"
 #include "morse.h"
+#include "ws2812b_led.h"
 
 /* This program is written for an Arduino Nano */
 
@@ -41,6 +42,9 @@ int main(void)
   bufpos = 0;
 
   morse_say_P(strHELLO);
+  wsled_color(10,0,0);
+  wsled_color(0,10,0);
+
   for (;;) {
     c = uart_getc(500, idler);
     if (c) {
