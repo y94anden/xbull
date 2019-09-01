@@ -75,8 +75,8 @@ class Flasher:
 class Bull:
     def __init__(self, port):
         self.serial = Serial(port, baudrate=115200)
-        self.serial.timeout = 0.2
-        self.verbose = 1
+        self.serial.timeout = 0.02
+        self.verbose = 0
 
     def __del__(self):
         self.serial.close()
@@ -91,16 +91,18 @@ class Bull:
             sum += d
         return sum % 0x100
 
-    def hex(self, data):
+    def escape(self, data):
         if not data:
             return '<empty>'
-
-        return '0x%s' % hexlify(data).decode()
+        try:
+            return '"' + data.decode('ascii') + '"'
+        except UnicodeDecodeError:
+            return '0x%s' % hexlify(data).decode()
 
     def serialRead(self):
         response = self.serial.read(260)
         if len(response) < 5:
-            self.print('Too short response:', self.hex(response))
+            self.print('Too short response:', self.escape(response))
             return
 
         address = response[0]
@@ -119,9 +121,9 @@ class Bull:
         self.print('Unit 0x%X responded' % address)
 
         if command == 0xFF:
-            self.print('Error response:', data)
+            self.print('Error response:', self.escape(data))
         else:
-            self.print('data:', self.hex(data))
+            self.print('data:', self.escape(data))
 
         return data
 
@@ -162,7 +164,7 @@ class Bull:
 
 if __name__ == '__main__':
     import sys
-    if len(sys.argv) not in [3, 4]:
+    if len(sys.argv) < 3:
         print('Supply address, parameter on command line')
         print('If a string of hex bytes is added, the parameter is written')
         sys.exit(1)
@@ -171,12 +173,14 @@ if __name__ == '__main__':
     param = int(sys.argv[2], 0)
     method = 'Reading from'
     data = None
-    if len(sys.argv) == 4:
-        data = b''.fromhex(sys.argv[3])
+    if len(sys.argv) >= 4:
+        data = b''.fromhex(''.join(sys.argv[3:]))
+        print(data)
         method = 'Writing to'
 
     b = Bull('/dev/ttyUSB0')
-    if len(sys.argv) == 4:
+    b.verbose = 1
+    if data:
         b.write(address, param, data)
     else:
         b.read(address, param)
