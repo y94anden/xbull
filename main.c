@@ -44,6 +44,7 @@ int main(void)
   morse_say_P(strHELLO);
   wsled_color(10,0,0);
   wsled_color(0,10,0);
+  wsled_color(0,0,10);
 
   for (;;) {
     c = uart_getc(500, idler);
