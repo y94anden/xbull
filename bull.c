@@ -5,6 +5,7 @@
 #include "morse.h"
 #include "version.h"
 #include "ws2812b_led.h"
+#include "therm_ds18b20.h"
 #include <stdint.h>
 #include <avr/pgmspace.h>
 
@@ -18,6 +19,8 @@
 
 uint8_t address;
 uint8_t bull_inhibit_response;
+uint64_t therm_discrepancy_mask;
+uint64_t therm_device_id;
 
 extern uint32_t time_s; // Defined in main.c
 void idler(void);       // Defined in main.c
@@ -217,6 +220,14 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
     // EEPROM parameters
     response = eeReadByte((uint8_t*)(param - 0x10 + 1));
     bull_data_reply(0x01, param, 1, &response);
+  } else if (param == 0x22) {
+    // Read DS18B20 temperature
+    if (len == 8) {
+      therm_device_id = *((uint64_t*)data);
+    }
+    int16_t temperature;
+    therm_read_temperature(&temperature, 0);
+    bull_data_reply(0x01, param, 2, (uint8_t*)&temperature);
   } else {
     // Invalid parameter
     bull_string_reply(0xFF, param, strINVALID_PARAMETER);
@@ -302,6 +313,17 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
       eeWriteByte((uint8_t*)(param - 0x10 + 1), data[0]);
       bull_data_reply(0x81, param, 0, 0);
     }
+  } else if (param == 0x20) {
+    // 1-wire reset
+    uint8_t r = therm_reset();
+    bull_data_reply(0x81, 0x20, 1, &r);
+  } else if (param == 0x21) {
+    // 1-wire search next. Supply nonzero data[0] to start new search.
+    if (len == 1 && data[0]) {
+      therm_discrepancy_mask=0;
+    }
+    therm_device_id = therm_search(&therm_discrepancy_mask);
+    bull_data_reply(0x81, 0x20, 8, (uint8_t*)&therm_device_id);
   } else {
     // Invalid parameter
     bull_string_reply(0xFF, param, strINVALID_PARAMETER);

@@ -10,7 +10,8 @@ SRCS = main.c \
        bull.c \
        eeprom.c \
        morse.c \
-       ws2812b_led.c
+       ws2812b_led.c \
+       therm_ds18b20.c
 
 .PHONY: all
 all: $(PROJECT).hex

@@ -13,7 +13,9 @@
 // 0x10 |
 // ...  | eeprom stored bytes, R/W
 // 0x1F |
-
+// 0x20 Reset 1-wire network. Return 1 if anyone responds.
+// 0x21 Search next unit on 1-wire network. Supply 1 to start new search.
+// 0x22 Read temperature. Supply device as input, or use last found/read.
 void bull_init();
 int is_bull(unsigned char* data, unsigned int length);
 void handle_bull(unsigned char* data, unsigned int length);
