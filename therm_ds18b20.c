@@ -7,56 +7,67 @@ uint8_t therm_reset() {
   uint8_t i;
 
   //Pull line low and wait for 480uS
-  THERM_LOW();
   THERM_OUTPUT_MODE();
+  THERM_LOW();
   _delay_us(480);//480 //must be smaller when moving delay func to other .c file
 
   //Release line and wait for 60uS
   THERM_INPUT_MODE();
-  PORTC |= 1;
-  _delay_us(60); //60
+  THERM_HIGH(); // Pullup
+  _delay_us(70); //60
 
   //Store line value and wait until the completion of 480uS period
-  i=(THERM_PIN & (1<<THERM_DQI));
+  i=THERM_READ();
 
-  _delay_us(420); //420
+  _delay_us(410); //420
 
   //Return the value read from the presence pulse (0=OK, 1=WRONG)
   return i;
 }
 
 void therm_write_bit(uint8_t bit) {
-  //Pull line low for 1uS
-  THERM_LOW();
+  cli();
+  //Pull line low for 6uS
   THERM_OUTPUT_MODE();
-  _delay_us(10);//1
+  THERM_LOW();
+  _delay_us(6);//1
 
   //If we want to write 1, release the line (if not will keep low)
-  if(bit) THERM_INPUT_MODE();
+  if(bit) {
+    THERM_INPUT_MODE();
+    THERM_HIGH(); // Pullup
+  }
+  sei();
 
-  //Wait for 60uS and release the line
-  _delay_us(60);//60
+  //Wait for 54uS and release the line (if not done before)
+  _delay_us(54);//60
   THERM_INPUT_MODE();
+  THERM_HIGH(); // Pullup
+  _delay_us(10);
 }
 
 uint8_t therm_read_bit(void) {
   uint8_t bit=0;
-  //Pull line low for 1uS
-  THERM_LOW();
+  cli();
+  //Pull line low for 6uS
   THERM_OUTPUT_MODE();
-  _delay_us(10);//1
+  THERM_LOW();
+  _delay_us(5);//1
 
   //Release line and wait for 14uS
   THERM_INPUT_MODE();
-  _delay_us(14);//14
+  THERM_HIGH(); // Pullup
+  _delay_us(9);//14
 
   //Read line value
-  if(THERM_PIN&(1<<THERM_DQI)) bit=1;
+  if(THERM_READ()) {
+    bit=1;
+  }
 
+  sei();
 
-  //Wait for 45uS to end and return read value
-  _delay_us(45);//45
-  
+  //Wait for 55uS to end and return read value
+  _delay_us(55);//45
   return bit;
 }
 
@@ -123,7 +134,7 @@ uint64_t therm_search(uint64_t* discrepancyMask) {
   //
   //For the first call, set discrepancyMask = 0
   //
-  //If the discrepancyMask is 0 after a search command, all 
+  //If the discrepancyMask is 0 after a search command, all
   //devices have been enumerated.
   //
   //The function returns the first deviceID after the last found
@@ -153,11 +164,11 @@ uint64_t therm_search(uint64_t* discrepancyMask) {
       // 0000100101001 <- least significant
       //     ^ ^  ^  <--- If current position is here:
       //     | |  |
-      //     | |  +--We have more to investigate higher up, 
+      //     | |  +--We have more to investigate higher up,
       //     | |     select bit = 1
       //     | +-----We have been here already and are now in the
       //     |       bit=0 branch
-      //     +-------Time to take the other route (bit = 0). Reset 
+      //     +-------Time to take the other route (bit = 0). Reset
       //             the mask and go with bit = 0.
 
       if ( (*discrepancyMask) & (1 << position)) {
@@ -171,7 +182,7 @@ uint64_t therm_search(uint64_t* discrepancyMask) {
         if ( (*discrepancyMask) < (1 << (position+1))) {
           //the mask is less than a 1 in the next position =>
           //this is the most significant bit in the mask.
-          
+
           //reset the mask
           (*discrepancyMask) ^= (1 << position); //Use XOR - we now it is a one
           selectedNextBit = 0;
@@ -185,7 +196,7 @@ uint64_t therm_search(uint64_t* discrepancyMask) {
         //If we have passed the MSB of the mask, we have found
         //a new discrepancy. Set the mask to 1, and go for the
         //1-branch.
-        //If we have not passed the MSB, this means we have 
+        //If we have not passed the MSB, this means we have
         //already investigated the 1-branch from this position and
         //we should keep investigating the 0-branch.
 
@@ -196,12 +207,12 @@ uint64_t therm_search(uint64_t* discrepancyMask) {
           (*discrepancyMask) |= (1 << position);
           selectedNextBit = 1;
         } else {
-          //We have not passed MSB => the 1-branch of this 
+          //We have not passed MSB => the 1-branch of this
           //discrepancy have been searched already => keep
           //going to the 0-branch.
           selectedNextBit = 0;
         }
-      } 
+      }
     } else if (normalBit && complementBit) {
       //No good. No device responded.
       return 0xFFFFFFFFFFFFFFFE;

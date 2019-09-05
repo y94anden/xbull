@@ -10,6 +10,7 @@
 #define THERM_OUTPUT_MODE() THERM_DDR|=(1<<THERM_DQI)
 #define THERM_LOW() THERM_PORT&=~(1<<THERM_DQI)
 #define THERM_HIGH() THERM_PORT|=(1<<THERM_DQI)
+#define THERM_READ() (THERM_PIN & (1 << THERM_DQI))
 
 /* list of these commands translated into C defines:*/
 #define THERM_CMD_CONVERTTEMP 0x44
