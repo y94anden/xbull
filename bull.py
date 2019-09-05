@@ -95,8 +95,9 @@ class Bull:
         if not data:
             return '<empty>'
         try:
+            assert False not in [(x >= 30 and x < 128) for x in data]
             return '"' + data.decode('ascii') + '"'
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, AssertionError):
             return '0x%s' % hexlify(data).decode()
 
     def serialRead(self):
@@ -163,6 +164,12 @@ class Bull:
 
         data = struct.pack('I', newtime)
         self.write(address, 0x05, data)
+
+    def read_temp(self, address):
+        d = self.read(address, 0x22)
+        temp = d[0] + d[1]*0x100
+        temp /= 16;
+        return temp;
 
 if __name__ == '__main__':
     import sys
