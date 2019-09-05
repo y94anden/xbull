@@ -1,3 +1,4 @@
+
 #include "bull.h"
 #include "uart.h"
 #include "hardware.h"
@@ -19,8 +20,10 @@
 
 uint8_t address;
 uint8_t bull_inhibit_response;
-uint64_t therm_discrepancy_mask;
-uint64_t therm_device_id;
+struct T {
+  uint64_t device_id;
+  uint64_t discrepancy_mask;
+} therm;
 
 extern uint32_t time_s; // Defined in main.c
 void idler(void);       // Defined in main.c
@@ -220,14 +223,21 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
     // EEPROM parameters
     response = eeReadByte((uint8_t*)(param - 0x10 + 1));
     bull_data_reply(0x01, param, 1, &response);
+  } else if (param == 0x21) {
+    // Read "search" = return last found/used id
+    bull_data_reply(0x01, param, 8, (uint8_t*)&(therm.device_id));
   } else if (param == 0x22) {
     // Read DS18B20 temperature
     if (len == 8) {
-      therm_device_id = *((uint64_t*)data);
+      therm.device_id = *((uint64_t*)data);
     }
     int16_t temperature;
-    therm_read_temperature(&temperature, 0);
+    therm_read_temperature(&temperature, &therm.device_id);
     bull_data_reply(0x01, param, 2, (uint8_t*)&temperature);
+  } else if (param == 0x23) {
+    // Read DS18B20 bit
+    response = therm_read_bit();
+    bull_data_reply(0x01, param, 1, &response);
   } else {
     // Invalid parameter
     bull_string_reply(0xFF, param, strINVALID_PARAMETER);
@@ -320,10 +330,15 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
   } else if (param == 0x21) {
     // 1-wire search next. Supply nonzero data[0] to start new search.
     if (len == 1 && data[0]) {
-      therm_discrepancy_mask=0;
+      therm.discrepancy_mask=0;
     }
-    therm_device_id = therm_search(&therm_discrepancy_mask);
-    bull_data_reply(0x81, 0x20, 8, (uint8_t*)&therm_device_id);
+    therm.device_id = therm_search(&therm.discrepancy_mask);
+    bull_data_reply(0x81, 0x20, 16, (uint8_t*)&therm);
+  } else if (param == 0x23) {
+    for (i = 0; i < len; i++) {
+      therm_write_bit(data[0]);
+    }
+    bull_data_reply(0x81, param, 1, (uint8_t*)&i);
   } else {
     // Invalid parameter
     bull_string_reply(0xFF, param, strINVALID_PARAMETER);
