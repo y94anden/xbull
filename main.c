@@ -8,6 +8,7 @@
 #include "bull.h"
 #include "morse.h"
 #include "ws2812b_led.h"
+#include "random.h"
 
 /* This program is written for an Arduino Nano */
 
@@ -37,6 +38,7 @@ int main(void)
   bull_init();  // bull.c
   morse_init();
   initTimers(); //hardware.c
+  rnd_init();
   sei(); //Enable interrupts.
 
   bufpos = 0;

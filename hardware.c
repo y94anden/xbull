@@ -9,7 +9,9 @@
 // PB5 onboard LED
 // PC5 WS1812b led chain
 // PC0 onewire (see thermds18b20.h)
-// PD2 RS485 direction pin?
+// PC1 Grounding button and source for random bit using ADC.
+// PD2 RS485 direction pin
+
 
 
 void initPorts() {
@@ -19,10 +21,12 @@ void initPorts() {
   PORTB = 0;    // No pullup, output 0
 
   DDRC = (1 << 5);  // Pin 5 output = WS1812b led chain
-  PORTC = 0;    // No pullup
+  PORTC = (1 << 1); // Pin 1 pullup = button / random ADC.
 
-  DDRD  = (1 << 2); // Pin 2 output = RS485 direction
-  PORTD = 0;    // No pullup
+  DDRD = 0;
+  DDRD |= (1 << 2); // Pin 2 output = RS485 direction
+  PORTD = 0; // No pullup.
+
 }
 
 void initTimers() {
@@ -100,6 +104,31 @@ void rs485_direction_out(){
 
 void rs485_direction_in(){
   PORTD &= ~(1 << 2);
+}
+
+uint16_t read_adc1() {
+  // ADC multiplexer selection register
+  ADMUX =
+    (1 << REFS0) | // REFS = 1 => AVcc as voltage reference
+    (1 << 0);      // MUX = 1  => ADC1
+
+  // ADC control and status register a
+  ADCSRA =
+    (1 << ADEN) | // ADC Enable
+    (7 << 0) |    // Prescaler 128
+    (1 << ADSC);  // ADC start conversion
+
+  while(!(ADCSRA & (1 << ADIF))) {
+    ; // Busy wait for conversion to finish
+  }
+
+  uint8_t temp;
+  uint16_t result;
+  temp = ADCL;
+  result = ADCH;
+  result <<= 8;
+  result |= temp;
+  return result;
 }
 
 

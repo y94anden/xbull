@@ -11,7 +11,9 @@ SRCS = main.c \
        eeprom.c \
        morse.c \
        ws2812b_led.c \
-       therm_ds18b20.c
+       therm_ds18b20.c \
+       random.c \
+       sha256.c
 
 .PHONY: all
 all: $(PROJECT).hex

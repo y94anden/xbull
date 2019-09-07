@@ -15,6 +15,9 @@ void blink(unsigned int count);
 void rs485_direction_out();
 void rs485_direction_in();
 
+// Reading of adc (busy wait)
+uint16_t read_adc1();
+
 // Leave application code, and start executing optiboot
 void programming_mode();
 #endif
