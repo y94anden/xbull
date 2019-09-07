@@ -130,8 +130,9 @@ class Bull:
 
         return data
 
-    def read(self, address, parameter):
-        msg = bytes([address, 0x01, parameter, 0x00])
+    def read(self, address, parameter, data=b''):
+        msg = bytes([address, 0x01, parameter, len(data)])
+        msg += data;
         msg += bytes([self.checksum(msg)]);
 
         self.serial.write(msg);
