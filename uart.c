@@ -35,7 +35,7 @@ void uart_setup() {
   UCSR0A = (1 << U2X0);
 
   // Enable receiver and transmitter and interrupts
-  UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1 << RXCIE0);
+  UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1 << RXCIE0) | (1 << TXCIE0);
 
   // Set frame format: 8data, 1stop bit
   UCSR0C = (3<<UCSZ00);
@@ -131,8 +131,6 @@ void uart_transmit() {
 
   if (sndHead == sndTail) {
     // Nothing to send
-    // Set RS485 direction back to IN
-    rs485_direction_in();
     UCSR0B &= ~(1 << UDRIE0); // Disable transmit interrupt.
     return;
   }
@@ -164,4 +162,13 @@ ISR (USART_RX_vect) {
 ISR (USART_UDRE_vect) {
   // A byte was sent. Send another one or set rs485 direction back to in.
   uart_transmit();
+}
+
+ISR (USART_TX_vect) {
+  // Transmit complete. Time to change directon on RS485?
+  if (sndHead == sndTail) {
+    // Nothing to send
+    // Set RS485 direction back to IN
+    rs485_direction_in();
+  }
 }

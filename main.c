@@ -64,6 +64,14 @@ int main(void)
 
 ISR(TIMER2_COMPA_vect) {
   // Called with 1kHz
+
+  // This interrupt might take a long time and is not _that_ time
+  // critical. Reenable interrupts so that other more important
+  // interrupts can be run.
+  sei();
+
+  PORTB |= (1 << 4); // Debug pin
+
   time_ms++;
   if (time_ms >= 1000) {
     time_s++;
@@ -77,4 +85,6 @@ ISR(TIMER2_COMPA_vect) {
   if (countdown_timer) {
     countdown_timer--;
   }
+
+  PORTB &= ~(1 << 4); // Debug pin
 }

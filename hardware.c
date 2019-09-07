@@ -3,14 +3,25 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 
+// Used pins:
+//
+// PB4 debug pin
+// PB5 onboard LED
+// PC5 WS1812b led chain
+// PC0 onewire (see thermds18b20.h)
+// PD2 RS485 direction pin?
+
+
 void initPorts() {
-  DDRB  = (1 << 5); // Pin 5 output = LED
+  DDRB  = 0;
+  DDRB |= (1 << 5); // Pin 5 output = LED
+  DDRB |= (1 << 4); // Pin 4 output = debug
   PORTB = 0;    // No pullup, output 0
 
   DDRC = (1 << 5);  // Pin 5 output = WS1812b led chain
   PORTC = 0;    // No pullup
 
-  DDRD  = 0x00; // All inputs
+  DDRD  = (1 << 2); // Pin 2 output = RS485 direction
   PORTD = 0;    // No pullup
 }
 
@@ -84,11 +95,11 @@ void blink(unsigned int count) {
 
 
 void rs485_direction_out(){
-  // TODO: Set direction pin
+  PORTD |= (1 << 2);
 }
 
 void rs485_direction_in(){
-  // TODO: Set direction pin
+  PORTD &= ~(1 << 2);
 }
 
 
