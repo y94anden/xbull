@@ -169,7 +169,8 @@ class Bull:
         d = self.read(address, 0x22)
         temp = d[0] + d[1]*0x100
         temp /= 16;
-        return temp;
+        deviceid = hexlify(d[2:][::-1]).decode()
+        return temp, deviceid;
 
 if __name__ == '__main__':
     import sys

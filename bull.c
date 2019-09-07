@@ -44,6 +44,8 @@ int checksum_ok(uint8_t* data, unsigned int length);
 void bull_string_reply(uint8_t command, uint8_t param, const char* str);
 void bull_data_reply(uint8_t command, uint8_t param, uint8_t len,
                      const uint8_t* data);
+void bull_data_reply2(uint8_t command, uint8_t param, uint8_t len1,
+                      const uint8_t* data1, uint8_t len2, const uint8_t* data2);
 void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data);
 void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data);
 
@@ -172,6 +174,40 @@ void bull_data_reply(uint8_t command, uint8_t param, uint8_t len,
   uart_putc(sum);
 }
 
+void bull_data_reply2(uint8_t command, uint8_t param,
+                      uint8_t len1, const uint8_t* data1,
+                      uint8_t len2, const uint8_t* data2) {
+  if (bull_inhibit_response) {
+    // We do not want to respond to broadcasts
+    return;
+  }
+  unsigned int i;
+  uint8_t sum = 0;
+  uart_putc(address);
+  sum += address;
+
+  uart_putc(command);
+  sum += command;
+
+  uart_putc(param);
+  sum += param;
+
+  uart_putc(len1 + len2);
+  sum += len1 + len2;
+
+  for (i = 0; i < len1; i++) {
+    uart_putc(data1[i]);
+    sum += data1[i];
+  }
+
+  for (i = 0; i < len2; i++) {
+    uart_putc(data2[i]);
+    sum += data2[i];
+  }
+
+  uart_putc(sum);
+}
+
 void bull_version_reply() {
   if (bull_inhibit_response) {
     // We do not want to respond to broadcasts
@@ -233,7 +269,9 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
     }
     int16_t temperature;
     therm_read_temperature(&temperature, &therm.device_id);
-    bull_data_reply(0x01, param, 2, (uint8_t*)&temperature);
+    bull_data_reply2(0x01, param,
+                     2, (uint8_t*)&temperature,
+                     8, (uint8_t*)&therm.device_id);
   } else if (param == 0x23) {
     // Read DS18B20 bit
     response = therm_read_bit();
