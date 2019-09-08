@@ -13,7 +13,8 @@ SRCS = main.c \
        ws2812b_led.c \
        therm_ds18b20.c \
        random.c \
-       sha256.c
+       sha256.c \
+       search.c
 
 .PHONY: all
 all: $(PROJECT).hex

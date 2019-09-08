@@ -7,6 +7,8 @@
 #include "version.h"
 #include "ws2812b_led.h"
 #include "therm_ds18b20.h"
+#include "random.h"
+#include "search.h"
 #include <stdint.h>
 #include <avr/pgmspace.h>
 
@@ -70,15 +72,22 @@ int is_bull(uint8_t* data, unsigned int length) {
 }
 
 void handle_bull(uint8_t* data, unsigned int length) {
-  if (data[0] != address && data[0] != 0xFF) {
-    // This is not our addres and not a broadcast message
-    return;
-  }
-
+  uint8_t t;
   if (!checksum_ok(data, length)) {
     if (data[0] == address) {
       // This is for us, and we are expected to answer something. Error.
       bull_string_reply(0xFF, 0x00, strBAD_CHECKSUM);
+    }
+    return;
+  }
+
+  if (data[0] != address && data[0] != 0xFF) {
+    // This is not our addres and not a broadcast message
+
+    if (data[1] == 0x01 && data[2] == 0x08 && length == 6) {
+      // Someone else is responding to a search. Store their selected
+      // slot for next search.
+      search_add_used(data[4]);
     }
     return;
   }
@@ -97,6 +106,12 @@ void handle_bull(uint8_t* data, unsigned int length) {
   default:
     bull_string_reply(0xFF, 0x00, strUNHANDLED_COMMAND);
   }
+
+  // Feed the random pool some entropy based on the 125kHz timer2 after
+  // a bull response. Not all units will get the request at all, and during
+  // broadcast, we might have somewhat differing clocks since poweron.
+  t = TCNT2;
+  rnd_feed(&t, 1);
 }
 
 int checksum_ok(uint8_t* data, unsigned int length) {
@@ -255,6 +270,24 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
   } else if (param == 0x06) {
     // Version
     bull_version_reply();
+  } else if (param == 0x08) {
+    // Respond to search
+    if (len == 1) {
+      if (bull_inhibit_response) {
+        // This was sent as broadcast. See if it is for us.
+        uint8_t* next = search_read_slot(data[0]);
+        if (next) {
+          // We will reply if the slot was ours - even for broadcast
+          bull_inhibit_response = 0;
+          bull_data_reply(0x01, param, 1, next);
+        }
+      } else { // ! bull_inhibit_response
+        // This was not a broadcast. This means that someone else with the
+        // same address as ours is responding to the master. Listen to their
+        // selected slot for next round and store it so we do not use it.
+        search_add_used(data[0]);
+      }
+    }
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     response = eeReadByte((uint8_t*)(param - 0x10 + 1));
@@ -303,12 +336,20 @@ void ignore_traffic() {
 void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
   uint16_t i;
   if (param == 0x01) {
-    // Address
-    if (bull_verify_length(param, len, 1)) {
-      address = data[0];
-      eeWriteByte((uint8_t*)0, address);
-      bull_data_reply(0x81, param, 0, 0);
+    // Address. If an extra parameter is supplied, it is the next selected
+    // slot for searching. If so, check if it is ours.
+    if (len == 2) {
+      if (!search_is_us(data[1])) {
+        // This was for someone else. Do not reply.
+        return;
+      }
+      // Hmm, this was for us.
+    } else if (!bull_verify_length(param, len, 1)) {
+      return;
     }
+    address = data[0];
+    eeWriteByte((uint8_t*)0, address);
+    bull_data_reply(0x81, param, 0, 0);
   } else if (param == 0x02) {
     // LED
     if (bull_verify_length(param, len, 1)) {
@@ -355,6 +396,12 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
       wsled_color(data[i], data[i+1], data[i+2]);
     }
     bull_string_reply(0x81, param, strOK);
+  } else if (param == 0x08) {
+    // Start new search
+    if (bull_verify_length(param, len, 1)) {
+      search_start(data[0]);
+      bull_data_reply(0x81, param, 0, 0); // Will probably be inhibited.
+    }
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     if(bull_verify_length(param, len, 1)) {

@@ -72,6 +72,43 @@ class Flasher:
         self.leave_programming_mode()
 
 
+class Searcher:
+    """
+    Class for searching the net for bull devices.
+    """
+    def __init__(self, bull, nr_slots=255):
+        assert isinstance(bull, Bull)
+        assert nr_slots > 4 and nr_slots <=255
+        self.bull = bull
+        self.bull.serial.timeout = 0.1
+        self.nr_slots = nr_slots
+
+    def search(self):
+        print('Starting search')
+        self.start()
+        for slot in range(self.nr_slots+1):
+            self.read_slot(slot)
+        print('All slots read')
+
+    def start(self):
+        self.bull.write(0xFF, 0x08, bytes([self.nr_slots]))
+
+    def read_slot(self, slot):
+        print('Reading slot % 3d:' % slot, end=' ')
+        response = self.bull.read(0xFf, 0x08, bytes([slot]), True)
+
+        if response['ok']:
+            print('0x%02X responded.' % response['address'], end=' ')
+            if len(response['data']) == 1:
+                print('Next selected slot:', int(response['data'][0]))
+            else:
+                print('Bad slot selection:', response['data'])
+        elif response['raw']:
+            print('Got garbled response:', response['raw'])
+        else:
+            print('No response')
+
+
 class Bull:
     def __init__(self, port):
         self.serial = Serial(port, baudrate=115200)
@@ -100,10 +137,14 @@ class Bull:
         except (UnicodeDecodeError, AssertionError):
             return '0x%s' % hexlify(data).decode()
 
-    def serialRead(self):
+    def serialRead(self, full_data=False):
         response = self.serial.read(5)
         if len(response) < 5:
             self.print('Too short response:', self.escape(response))
+            if full_data:
+                return {'ok': False,
+                        'raw': response,
+                }
             return
 
         address = response[0]
@@ -114,38 +155,53 @@ class Bull:
             response += self.serial.read(length)
         data = response[4:-1]
         checksum = response[-1]
+        ok = True
 
         if self.checksum(response[:-1]) != checksum:
             self.print('Bad checksum')
+            ok = False
 
         if length + 5 != len(response):
             self.print('Bad length of response')
+            ok = False
 
         self.print('Unit 0x%X responded' % address)
 
         if command == 0xFF:
             self.print('Error response:', self.escape(data))
+            ok = False
         else:
             self.print('data:', self.escape(data))
 
+        if full_data:
+            return {'address': address,
+                    'command': command,
+                    'parameter': parameter,
+                    'length': length,
+                    'data': data,
+                    'checksum': checksum,
+                    'ok': ok,
+                    'raw': response,
+            }
+
         return data
 
-    def read(self, address, parameter, data=b''):
+    def read(self, address, parameter, data=b'', full_data=False):
         msg = bytes([address, 0x01, parameter, len(data)])
         msg += data;
         msg += bytes([self.checksum(msg)]);
 
         self.serial.write(msg);
-        return self.serialRead()
+        return self.serialRead(full_data)
 
-    def write(self, address, parameter, value):
+    def write(self, address, parameter, value, full_data=False):
         if not isinstance(value, bytes):
             value = bytes([value])
         msg = bytes([address, 0x81, parameter, len(value)]) + value
         msg += bytes([self.checksum(msg)])
 
         self.serial.write(msg)
-        return self.serialRead()
+        return self.serialRead(full_data)
 
     def read_time(self, address):
         org_verbose = self.verbose

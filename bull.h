@@ -10,6 +10,7 @@
 // 0x05 Time in seconds, 32 bit, R/W
 // 0x06 Version, R
 // 0x07 NeoPixel write, W
+// 0x08 Search xBull units, R/W (see search.h for explanation)
 // 0x10 |
 // ...  | eeprom stored bytes, R/W
 // 0x1F |
