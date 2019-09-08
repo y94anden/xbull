@@ -9,6 +9,7 @@
 #include "therm_ds18b20.h"
 #include "random.h"
 #include "search.h"
+#include "temp.h"
 #include <stdint.h>
 #include <avr/pgmspace.h>
 
@@ -72,7 +73,6 @@ int is_bull(uint8_t* data, unsigned int length) {
 }
 
 void handle_bull(uint8_t* data, unsigned int length) {
-  uint8_t t;
   if (!checksum_ok(data, length)) {
     if (data[0] == address) {
       // This is for us, and we are expected to answer something. Error.
@@ -110,8 +110,8 @@ void handle_bull(uint8_t* data, unsigned int length) {
   // Feed the random pool some entropy based on the 125kHz timer2 after
   // a bull response. Not all units will get the request at all, and during
   // broadcast, we might have somewhat differing clocks since poweron.
-  t = TCNT2;
-  rnd_feed(&t, 1);
+  temp.ui8 = TCNT2;
+  rnd_feed(&temp.ui8, 1);
 }
 
 int checksum_ok(uint8_t* data, unsigned int length) {
@@ -252,18 +252,16 @@ void bull_version_reply() {
   }
 
   uart_putc(sum);
-
 }
 
 void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
-  uint8_t response;
   if (param == 0x01) {
     // Address
     bull_data_reply(0x01, param, 1, &address);
   } else if (param == 0x02) {
-    // LED
-    response = readled();
-    bull_data_reply(0x01, param, 1, &response);
+    // Name
+    eeReadBlock((void*)1, temp.buf, 15);
+    bull_data_reply(0x01, param, 15, temp.buf);
   } else if (param == 0x05) {
     // Time
     bull_data_reply(0x01, param, 4, (uint8_t*)&time_s);
@@ -290,8 +288,8 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
     }
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
-    response = eeReadByte((uint8_t*)(param - 0x10 + 1));
-    bull_data_reply(0x01, param, 1, &response);
+    temp.ui8 = eeReadByte((void*)(0x10) + param);
+    bull_data_reply(0x01, param, 1, &temp.ui8);
   } else if (param == 0x21) {
     // Read "search" = return last found/used id
     bull_data_reply(0x01, param, 8, (uint8_t*)&(therm.device_id));
@@ -300,15 +298,14 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
     if (len == 8) {
       therm.device_id = *((uint64_t*)data);
     }
-    int16_t temperature;
-    therm_read_temperature(&temperature, &therm.device_id);
+    therm_read_temperature(&temp.i16, &therm.device_id);
     bull_data_reply2(0x01, param,
-                     2, (uint8_t*)&temperature,
+                     2, (uint8_t*)&temp.i16,
                      8, (uint8_t*)&therm.device_id);
   } else if (param == 0x23) {
     // Read DS18B20 bit
-    response = therm_read_bit();
-    bull_data_reply(0x01, param, 1, &response);
+    temp.ui8 = therm_read_bit();
+    bull_data_reply(0x01, param, 1, &temp.ui8);
   } else {
     // Invalid parameter
     bull_string_reply(0xFF, param, strINVALID_PARAMETER);
@@ -351,15 +348,8 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
     eeWriteByte((uint8_t*)0, address);
     bull_data_reply(0x81, param, 0, 0);
   } else if (param == 0x02) {
-    // LED
-    if (bull_verify_length(param, len, 1)) {
-      bull_data_reply(0x81, param, 0, 0);
-      if (data[0] <= 1) {
-        led(data[0]);
-      } else {
-        blink(data[0]);
-      }
-    }
+    // Name
+    eeWriteBlock((void*)1, data, len < 15 ? len : 15);
   } else if (param == 0x03) {
     // Ignore traffic until quiet for 5 seconds. If payload data is my address,
     // keep listening. This is used to be able to send any binary data to one
@@ -410,8 +400,8 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
     }
   } else if (param == 0x20) {
     // 1-wire reset
-    uint8_t r = therm_reset();
-    bull_data_reply(0x81, 0x20, 1, &r);
+    temp.ui8 = therm_reset();
+    bull_data_reply(0x81, 0x20, 1, &temp.ui8);
   } else if (param == 0x21) {
     // 1-wire search next. Supply nonzero data[0] to start new search.
     if (len == 1 && data[0]) {

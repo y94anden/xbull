@@ -4,7 +4,7 @@
 // Parameters
 //
 // 0x01 Address of unit, R/W
-// 0x02 LED control. 0/1 = off/on, >1 = blink that many times, R/W
+// 0x02 Name of unit, up to 16 bytes, R/W
 // 0x03 Ignore traffic. Quiet 5s = start listening again, W
 // 0x04 Go into programming mode (optiboot), W
 // 0x05 Time in seconds, 32 bit, R/W

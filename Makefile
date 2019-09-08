@@ -14,7 +14,8 @@ SRCS = main.c \
        therm_ds18b20.c \
        random.c \
        sha256.c \
-       search.c
+       search.c \
+       temp.c
 
 .PHONY: all
 all: $(PROJECT).hex

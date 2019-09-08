@@ -1,11 +1,12 @@
 #include "random.h"
+#include "eeprom.h"
 #include "sha256.h"
 #include "hardware.h"
+#include "temp.h"
 #include <string.h>
 #include <avr/eeprom.h>
 
 struct psSha256_t rnd_container;
-uint8_t rnd_hash[SHA256_HASHLEN];
 
 void rnd_init() {
   psSha256Init(&rnd_container);
@@ -14,8 +15,8 @@ void rnd_init() {
 
   // Feed the random pool from the eeprom. This will add device ID in to the
   // entropy meaning that different devices should get different initalization.
-  eeprom_read_block(rnd_hash, 0, SHA256_HASHLEN);
-  rnd_feed(rnd_hash, SHA256_HASHLEN);
+  eeReadBlock(0, temp.buf, 32);
+  rnd_feed(temp.buf, 32);
 }
 
 void rnd_feed_from_adc(uint8_t count) {
@@ -38,11 +39,11 @@ uint8_t* rnd_read() {
   // Do the finalization on a copy to preserve all states.
   struct psSha256_t rndTemp;
   memcpy(&rndTemp, &rnd_container, sizeof(rnd_container));
-  psSha256Final(&rndTemp, rnd_hash);
+  psSha256Final(&rndTemp, temp.hash);
 
   // Feed the random hash with something/anything to move it forward a bit.
-  rnd_feed(rnd_hash, 2);
-  return rnd_hash;
+  rnd_feed(temp.hash, 2);
+  return temp.hash;
 }
 
 uint8_t rnd_integer(uint8_t max) {
@@ -61,11 +62,11 @@ uint8_t rnd_integer(uint8_t max) {
   mask = (1 << i) - 1;
 
   while(1) {
-    rnd_read(); // To update the rnd_hash
+    rnd_read(); // To update the hash in temp.hash
     for (i = 0; i < SHA256_HASHLEN; i++) {
-      if ((rnd_hash[i] & mask) <= max) {
+      if ((temp.hash[i] & mask) <= max) {
         // This random value (masked) was small enough for us. Return it.
-        return (rnd_hash[i] & mask);
+        return (temp.hash[i] & mask);
       }
       // Nope. Random value too big. Trow away.
     }
