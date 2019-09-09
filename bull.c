@@ -354,18 +354,17 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
     // Ignore traffic until quiet for 5 seconds. If payload data is my address,
     // keep listening. This is used to be able to send any binary data to one
     // device while all others ignore it, such as during an upgrade.
-    if (bull_verify_length(param, len, 1)) {
-      if (data[0] == address || data[0] == 0xFF) {
+    if (len == 1 && (data[0] == address || data[0] == 0xFF)) {
         // Even if this was a broadcast, we should respond. It was for us.
         // It can also be for everyone to respond. That would only work with
         // a single device.
         bull_inhibit_response = 0;
-      } else {
-        // Not for us. Stop processing incoming traffic.
-        ignore_traffic();
+        bull_data_reply(0x81, param, 0, 0);
+        return;
       }
-    }
-    bull_data_reply(0x81, param, 0, 0);
+
+    // Not for us. Stop processing incoming traffic.
+    ignore_traffic();
   } else if (param == 0x04) {
     // Go into programming mode. All normal execution stops.
     programming_mode();
