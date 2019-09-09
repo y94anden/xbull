@@ -33,6 +33,12 @@ class Flasher:
     def enter_programming_mode(self):
         org_verbose = self.bull.verbose
         self.bull.verbose = 0
+        # Make all units deaf until we quiet down. By supplying self.addres,
+        # only "our" unit will be listening to next command
+        self.bull.timeout = 0.2
+        self.bull.write(0xFF, 0x03, self.address)
+
+        # Go inte programming mode.
         self.bull.write(self.address, 0x04, 1)
         self.bull.verbose = org_verbose
 
@@ -41,7 +47,9 @@ class Flasher:
         self.read()  # Clear buffer
 
     def read(self, length=None):
-        r = self.serial.read(length or 512) # length == None -> Extremly long
+        to_read = length or 512  # length == None -> Extremly long
+        self.serial.timeout = 0.25
+        r = self.serial.read(to_read)
         if length:
             assert len(r) == length, 'Too short reply'
 
@@ -59,18 +67,116 @@ class Flasher:
         print('Signature bytes:', hexlify(r[1:4]).decode())
 
         # Read SW Major version
-        self.serial.write(b'\x41\x81 ')  # Request SW Major version
+        self.serial.write(b'A\x81 ')  # Request SW Major version
         r = self.read()
         major = r[1]
 
         # Read SW Minor version
-        self.serial.write(b'\x41\x82 ')  # Request SW Minorversion
+        self.serial.write(b'A\x82 ')  # Request SW Minorversion
         r = self.read()
         minor = r[1]
 
         print('Optiboot version: %d.%d' % (major, minor))
         self.leave_programming_mode()
 
+    def program_page(self, address, data):
+        # Load address
+        self.serial.write(b'U')
+        address >>= 1  # We should supply the address as word.
+        self.serial.write(bytes([address & 0xFF, (address >> 8) & 0xFF]))
+        self.serial.write(b' ')
+        self.read(2)
+
+        # Program page
+        block_size = len(data)
+        self.serial.write(b'd')                               # program page
+        self.serial.write(bytes([(block_size >> 8) & 0xFF]))  # high bytes
+        self.serial.write(bytes([block_size & 0xFF]))         # low bytes
+        self.serial.write(b'F')                               # memtype = flash
+        self.serial.write(data)
+        self.serial.write(b' ')
+        self.read(2)
+
+    def read_page(self, address, block_size):
+        # Load address
+        print('Load address', address)
+        self.serial.write(b'U')
+        address >>= 1  # We should supply the address as word.
+        self.serial.write(bytes([address & 0xFF, (address >> 8) & 0xFF]))
+        self.serial.write(b' ')
+        self.read(2)
+
+        # Read page
+        print('Read page', block_size)
+        self.serial.write(b't')                               # read page
+        self.serial.write(bytes([(block_size >> 8) & 0xFF]))  # high bytes
+        self.serial.write(bytes([block_size & 0xFF]))         # low bytes
+        self.serial.write(b'F')                               # memtype = flash
+        self.serial.write(b' ')
+        r = self.read(block_size + 2)
+        return r[1:-1]
+
+    def read_hex(self, filename):
+        data = b''
+        eof_found = False
+        with open(filename) as f:
+            for i, line in enumerate(f):
+                assert not eof_found
+                assert line[0] == ':', 'Not starting with colon. Hex format?'
+                line = b''.fromhex(line[1:].strip())  # Convert to binary
+                checksum  = (((sum(line[:-1]) & 0xFF) ^ 0xFF) + 1) & 0xFF
+                assert checksum == line[-1], 'Bad checksum line %d' % i
+                length = line[0]
+                offset = (line[1] << 8) + line[2]
+                rec_type = line[3]
+                if rec_type == 0x01:
+                    eof_found = True
+                elif rec_type == 0x00:
+                    assert offset == len(data), 'Hex file not contigous'
+                    d = line[4:-1]
+                    assert len(d) == length, 'Wrong length on line %d' % i
+                    data += d
+                else:
+                    assert False, 'Unhandled record type: 0x%02X ' \
+                        'on line %d' % (rec_type, i)
+        return data
+
+    def validate(self, filename):
+        ref = self.read_hex(filename)
+
+        address = 0
+        data = b''
+        self.enter_programming_mode()
+        time.sleep(0.2)
+        while address < len(ref):
+            block_size = min(128, len(ref) - address)
+            data += self.read_page(address, block_size)
+            address += block_size
+
+        if ref == data:
+            print('Validation successful')
+        else:
+            print('Read data does not match hex file')
+        self.leave_programming_mode()
+
+        return data, ref
+
+    def write_hex(self, filename):
+        data = self.read_hex(filename)
+
+        self.enter_programming_mode()
+        time.sleep(0.2)
+        address = 0
+        block_size = 128
+        print('About to program device:')
+        while data:
+            self.program_page(address, data[:block_size])
+            data = data[block_size:]
+            address += block_size
+            print('\rWrote', address, 'of', address + len(data), end='   ')
+
+        print('\nDone!')
+        self.leave_programming_mode()
 
 class Searcher:
     """
