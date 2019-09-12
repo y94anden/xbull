@@ -344,6 +344,17 @@ class Bull:
         deviceid = hexlify(d[2:][::-1]).decode()
         return temp, deviceid;
 
+    def read_chip_info(self, address):
+        data = self.read(address, 0x0A)
+        d = dict()
+        d['fuse_l'] = '0x%02X' % data[0]
+        d['fuse_h'] = '0x%02X' % data[1]
+        d['fuse_e'] = '0x%02X' % data[2]
+        d['lock'] = '0x%02X' % data[3]
+        d['signature'] = ', '.join(['0x%02X' % s for s in data[4:7]])
+        d['calibration'] = '0x%02X' % data[7]
+        return d
+
 if __name__ == '__main__':
     import sys
     if len(sys.argv) < 3:

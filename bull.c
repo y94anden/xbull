@@ -310,6 +310,19 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
       flash_read_page(data[0], serialbuffer);
       bull_data_reply(0x01, param, 128, serialbuffer);
     }
+  } else if (param == 0x0A) {
+    // Read chip info.
+    // Fuses: Low, High, Extended, Lock
+    // Signature bytes, RC Calibration
+    temp.buf[0] = boot_lock_fuse_bits_get(GET_LOW_FUSE_BITS);
+    temp.buf[1] = boot_lock_fuse_bits_get(GET_HIGH_FUSE_BITS);
+    temp.buf[2] = boot_lock_fuse_bits_get(GET_EXTENDED_FUSE_BITS);
+    temp.buf[3] = boot_lock_fuse_bits_get(GET_LOCK_BITS);
+    temp.buf[4] = boot_signature_byte_get(0); // Signature 1
+    temp.buf[5] = boot_signature_byte_get(2); // Signature 2
+    temp.buf[6] = boot_signature_byte_get(4); // Signature 3
+    temp.buf[7] = boot_signature_byte_get(1); // RC Calibration
+    bull_data_reply(0x01, param, 8, temp.buf);
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     temp.ui8 = eeReadByte((void*)(0x10) + param);

@@ -12,6 +12,7 @@
 // 0x07 NeoPixel write, W
 // 0x08 Search xBull units, R/W (see search.h for explanation)
 // 0x09 Read flash page, R.
+// 0x0A Read chip info, R. Fuses(L, H, E, lock), Signature, Calibration
 // 0x10 |
 // ...  | eeprom stored bytes, R/W
 // 0x1F |
