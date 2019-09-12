@@ -1,6 +1,7 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
+#include <avr/wdt.h>
 #include <stdint.h>
 
 #include "hardware.h"
@@ -24,6 +25,7 @@ const char strHELLO[] PROGMEM = "HELLO";
 void idler(void) {
   // This function is run when uart_getc is idling
   led(morse_getled());
+  wdt_reset();
 }
 
 
@@ -31,6 +33,8 @@ int main(void)
 {
   uint8_t *c;
   cli();
+
+  wdt_enable(WDTO_8S); // Use a _long_ watchdog timeout.
 
   initPorts();  // hardware.c
   uart_setup(); // uart.c
@@ -48,6 +52,7 @@ int main(void)
   wsled_color(0,0,10);
 
   for (;;) {
+    wdt_reset();
     c = uart_getc(500, idler);
     if (c) {
       serialbuffer[bufpos] = *c;

@@ -15,6 +15,7 @@
 #include <avr/interrupt.h>
 #include <avr/eeprom.h>
 #include <avr/boot.h>
+#include <avr/wdt.h>
 
 // A bull message consists of the following bytes:
 // 0: address
@@ -355,6 +356,7 @@ void ignore_traffic() {
   uint8_t *c = &address; // Initiate with any address.
   while (c) {
     c = uart_getc(5000, idler);
+    wdt_reset();
   }
   morse_say_P(strLISTENING);
 }
