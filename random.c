@@ -2,7 +2,7 @@
 #include "eeprom.h"
 #include "sha256.h"
 #include "hardware.h"
-#include "temp.h"
+#include "globals.h"
 #include <string.h>
 #include <avr/eeprom.h>
 

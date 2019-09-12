@@ -15,7 +15,7 @@ SRCS = main.c \
        random.c \
        sha256.c \
        search.c \
-       temp.c
+       globals.c
 
 .PHONY: all
 all: $(PROJECT).hex
@@ -94,7 +94,7 @@ disasm: $(PROJECT).elf
 # ^ ^ ^ ^ ^ \+/ ^
 # | | | | |  |  |
 # | | | | |  |  +----- BOOTRST  (Select reset vector)
-# | | | | |  +-------- BOOTSZ   (Boot size. 00=bit, 11=small)
+# | | | | |  +-------- BOOTSZ   (Boot size. 00=big, 11=small)
 # | | | | +----------- EESAVE   (EEProm preserved through chip erase)
 # | | | +------------- WDTON    (Watchdog always on)
 # | | +--------------- SPIEN    (SPI Enable - serial programming)

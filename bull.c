@@ -9,9 +9,12 @@
 #include "therm_ds18b20.h"
 #include "random.h"
 #include "search.h"
-#include "temp.h"
+#include "globals.h"
 #include <stdint.h>
 #include <avr/pgmspace.h>
+#include <avr/interrupt.h>
+#include <avr/eeprom.h>
+#include <avr/boot.h>
 
 // A bull message consists of the following bytes:
 // 0: address
@@ -51,6 +54,7 @@ void bull_data_reply2(uint8_t command, uint8_t param, uint8_t len1,
                       const uint8_t* data1, uint8_t len2, const uint8_t* data2);
 void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data);
 void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data);
+void flash_read_page(uint16_t page, uint8_t *buf);
 
 void bull_init() {
   address = eeReadByte(0);
@@ -254,6 +258,14 @@ void bull_version_reply() {
   uart_putc(sum);
 }
 
+uint8_t bull_verify_length(uint8_t param, uint8_t supplied, uint8_t expected) {
+  if (supplied == expected) {
+    return 1;
+  }
+  bull_string_reply(0xFF, param, strINVALID_LENGTH);
+  return 0;
+}
+
 void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
   if (param == 0x01) {
     // Address
@@ -286,6 +298,18 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
         search_add_used(data[0]);
       }
     }
+  } else if (param == 0x09) {
+    // Read flash memory
+    // First byte is the page number to read. The bootloader uses the last
+    // 512 bytes of the 32k Flash, ie from byte 32256-32767. Supply page
+    // 252 to read the first 128 byte block of the boot loader.
+    if (bull_verify_length(param, len, 1)) {
+      // Use the serial buffer to store the read data. It is large enough,
+      // 128 bytes. Also, we know that the main loop is not using it, as
+      // we are called with it.
+      flash_read_page(data[0], serialbuffer);
+      bull_data_reply(0x01, param, 128, serialbuffer);
+    }
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     temp.ui8 = eeReadByte((void*)(0x10) + param);
@@ -310,14 +334,6 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
     // Invalid parameter
     bull_string_reply(0xFF, param, strINVALID_PARAMETER);
   }
-}
-
-uint8_t bull_verify_length(uint8_t param, uint8_t supplied, uint8_t expected) {
-  if (supplied == expected) {
-    return 1;
-  }
-  bull_string_reply(0xFF, param, strINVALID_LENGTH);
-  return 0;
 }
 
 void ignore_traffic() {
@@ -416,5 +432,12 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
   } else {
     // Invalid parameter
     bull_string_reply(0xFF, param, strINVALID_PARAMETER);
+  }
+}
+
+void flash_read_page(uint16_t page, uint8_t *buf) {
+  uint16_t i;
+  for(i=0; i < SPM_PAGESIZE; i++) {
+    buf[i] = pgm_read_byte((void*)(page*SPM_PAGESIZE+i));
   }
 }

@@ -119,6 +119,7 @@ class Flasher:
     def read_hex(self, filename):
         data = b''
         eof_found = False
+        start_address = None
         with open(filename) as f:
             for i, line in enumerate(f):
                 assert not eof_found
@@ -132,10 +133,18 @@ class Flasher:
                 if rec_type == 0x01:
                     eof_found = True
                 elif rec_type == 0x00:
-                    assert offset == len(data), 'Hex file not contigous'
+                    if start_address is None:
+                        start_address = offset;
+                    while offset > start_address + len(data):
+                        # There was a hole in the supplied data. Fill with FF.
+                        data += b'\xFF'
+                    assert offset == start_address + len(data), 'Hex file not contigous'
                     d = line[4:-1]
                     assert len(d) == length, 'Wrong length on line %d' % i
                     data += d
+                elif rec_type == 0x03:
+                    # Start segment address. Ignore it.
+                    pass
                 else:
                     assert False, 'Unhandled record type: 0x%02X ' \
                         'on line %d' % (rec_type, i)

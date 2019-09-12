@@ -9,11 +9,10 @@
 #include "morse.h"
 #include "ws2812b_led.h"
 #include "random.h"
+#include "globals.h"
 
 /* This program is written for an Arduino Nano */
 
-#define BUFSIZE 32
-uint8_t buffer[BUFSIZE];
 unsigned int bufpos;
 uint16_t time_ms = 0;
 uint32_t time_s = 0;
@@ -51,10 +50,14 @@ int main(void)
   for (;;) {
     c = uart_getc(500, idler);
     if (c) {
-      buffer[bufpos] = *c;
+      serialbuffer[bufpos] = *c;
       bufpos++;
-      if (is_bull(buffer, bufpos)) {
-        handle_bull(buffer, bufpos);
+      if (is_bull(serialbuffer, bufpos)) {
+        handle_bull(serialbuffer, bufpos);
+        bufpos = 0;
+      } else if (bufpos >= SERIALBUFSIZE) {
+        // We are getting a larger message than we can handle.
+        // Kill the buffer.
         bufpos = 0;
       }
     } else {
