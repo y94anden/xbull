@@ -95,6 +95,4 @@ ISR(TIMER2_COMPA_vect) {
   if (countdown_timer) {
     countdown_timer--;
   }
-
-  PORTB &= ~(1 << 4); // Debug pin
 }

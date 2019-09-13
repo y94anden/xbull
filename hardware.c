@@ -5,28 +5,33 @@
 
 // Used pins:
 //
-// PB4 debug pin
-// PB5 onboard LED
-// PC5 WS1812b led chain
+// PB2 /SS for SPI. Must not be low during SPI operations.
+// PB3 MOSI
+// PB4 MISO
+// PB5 onboard LED (or SCK for SPI)
+//
 // PC0 onewire (see thermds18b20.h)
 // PC1 Grounding button and source for random bit using ADC.
-// PD2 RS485 direction pin
+// PC5 WS1812b led chain
+//
+// PD4 RS485 direction pin
 
 
 
 void initPorts() {
   DDRB  = 0;
-  DDRB |= (1 << 5); // Pin 5 output = LED
-  DDRB |= (1 << 4); // Pin 4 output = debug
-  PORTB = 0;    // No pullup, output 0
+  DDRB |= (1 << 2);  // Pin 2 output = SPI /Slave Seleect
+  DDRB |= (1 << 3);  // Pin 3 output = MOSI
+  DDRB |= (1 << 5);  // Pin 5 output = LED, SPI SCK
+  PORTB = 0;         // No pullup, output 0
+  PORTB |= (1 << 2); // Pin 2, output high
 
-  DDRC = (1 << 5);  // Pin 5 output = WS1812b led chain
-  PORTC = (1 << 1); // Pin 1 pullup = button / random ADC.
+  DDRC = (1 << 5);   // Pin 5 output = WS1812b led chain
+  PORTC = (1 << 1);  // Pin 1 pullup = button / random ADC.
 
   DDRD = 0;
-  DDRD |= (1 << 2); // Pin 2 output = RS485 direction
-  PORTD = 0; // No pullup.
-
+  DDRD |= (1 << 2);  // Pin 2 output = RS485 direction
+  PORTD = 0;         // No pullup.
 }
 
 void initTimers() {
@@ -162,4 +167,18 @@ void programming_mode() {
   MCUSR=0;
 
   do_reboot();
+}
+
+void spi_enable() {
+  // CPOL = 0, Clock low when inactive
+  // CPHA = 0, Sample on leading edge (= rising)
+  // DORD = 0, Data order = 0, MSB first
+  SPCR =
+    (1 << SPIE) | // SPI Interrupt Enable
+    (1 << SPE) |  // SPI Enable
+    (1 << MSTR); // SPI Master
+}
+
+void spi_disable() {
+  //SPCR = 0;
 }

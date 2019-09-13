@@ -20,4 +20,9 @@ uint16_t read_adc1();
 
 // Leave application code, and start executing optiboot
 void programming_mode();
+
+// SPI functions
+void spi_enable();
+void spi_disable();
+
 #endif

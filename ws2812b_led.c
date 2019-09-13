@@ -79,8 +79,8 @@ void wsled_sendBitOne() {
   // 2. Send a zero for 450-5500 ns = 8-88 clock cycles.
   //
 
-  // PortB is register $05
-  // Pin 6 is supposed to be connected to ws2812b.
+  // PortC is register $08
+  // Pin 5 is supposed to be connected to ws2812b.
   asm volatile("sbi 8, 5"      "\n\t"
                "nop"           "\n\t"
                "nop"           "\n\t"

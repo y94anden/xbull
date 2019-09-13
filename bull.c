@@ -10,6 +10,7 @@
 #include "random.h"
 #include "search.h"
 #include "globals.h"
+#include "spi.h"
 #include <stdint.h>
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
@@ -422,6 +423,11 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
       search_start(data[0]);
       bull_data_reply(0x81, param, 0, 0); // Will probably be inhibited.
     }
+  } else if (param == 0x0b) {
+    // SPI
+    spi_send(data, len);
+    spi_busywait_until_done();
+    bull_data_reply(0x81, param, spi_bytes_in_rx_buf, spi_buf_rx);
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     if(bull_verify_length(param, len, 1)) {
