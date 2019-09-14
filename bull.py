@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from argparse import ArgumentParser
 from serial import Serial
 from binascii import hexlify
 from datetime import datetime
@@ -141,23 +142,32 @@ class Bull:
         return d
 
 if __name__ == '__main__':
-    import sys
-    if len(sys.argv) < 3:
-        print('Supply address, parameter on command line')
-        print('If a string of hex bytes is added, the parameter is written')
-        sys.exit(1)
+    parser = ArgumentParser()
+    parser.add_argument('-p', '--port', help='Serial port to use. Defaults to '
+                        + DEFAULT_PORT, default=DEFAULT_PORT)
+    group = parser.add_argument_group()
+    group.add_argument('-w', '--write', action='store_true', help='Write '
+                       'eventhough payload is not supplied')
+    group.add_argument('-r', '--read', action='store_true', help='Read '
+                       'eventhough payload is supplied')
+    parser.add_argument('-s', '--string', action='store_true', help='Payload '
+                        'supplied as string. Joined by space.')
+    parser.add_argument('address', help='Address of device')
+    parser.add_argument('parameter', help='Bull parameter to access')
+    parser.add_argument('payload', nargs='*', help='Payload as hex string. When '
+                        'supplied, a write will be performed unless -r is supplied')
+    args = parser.parse_args()
 
-    address = int(sys.argv[1], 0)
-    param = int(sys.argv[2], 0)
-    method = 'Reading from'
-    data = None
-    if len(sys.argv) >= 4:
-        data = b''.fromhex(''.join(sys.argv[3:]))
-        method = 'Writing to'
-
-    b = Bull('/dev/ttyUSB0')
+    address = int(args.address, 0)
+    param = int(args.parameter, 0)
+    if args.string:
+        data = (' '.join(args.payload)).encode()
+    else:
+        data = b''.fromhex(''.join(args.payload))
+    writing = (data and not args.read) or args.write
+    b = Bull(args.port)
     b.verbose = 1
-    if data:
+    if writing:
         b.write(address, param, data)
     else:
         b.read(address, param)
