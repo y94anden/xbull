@@ -6,8 +6,6 @@ import time
 
 import bull
 
-DEFAULT_PORT = '/dev/ttyUSB0'
-
 class FlashException(Exception): pass
 
 class Flasher:
@@ -213,7 +211,7 @@ class Flasher:
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-p', '--port', help='Serial port to use. Defaults to '
-                        + DEFAULT_PORT, default=DEFAULT_PORT)
+                        + bull.DEFAULT_PORT, default=bull.DEFAULT_PORT)
     parser.add_argument('-v', '--validate', help='Validate flash with hex file',
                         action='store_true')
     parser.add_argument('address', help='Address of device')

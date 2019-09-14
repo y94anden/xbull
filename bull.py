@@ -6,42 +6,7 @@ from datetime import datetime
 import time
 import struct
 
-
-class Searcher:
-    """
-    Class for searching the net for bull devices.
-    """
-    def __init__(self, bull, nr_slots=255):
-        assert isinstance(bull, Bull)
-        assert nr_slots > 4 and nr_slots <=255
-        self.bull = bull
-        self.bull.serial.timeout = 0.1
-        self.nr_slots = nr_slots
-
-    def search(self):
-        print('Starting search')
-        self.start()
-        for slot in range(self.nr_slots+1):
-            self.read_slot(slot)
-        print('All slots read')
-
-    def start(self):
-        self.bull.write(0xFF, 0x08, bytes([self.nr_slots]))
-
-    def read_slot(self, slot):
-        print('Reading slot % 3d:' % slot, end=' ')
-        response = self.bull.read(0xFf, 0x08, bytes([slot]), True)
-
-        if response['ok']:
-            print('0x%02X responded.' % response['address'], end=' ')
-            if len(response['data']) == 1:
-                print('Next selected slot:', int(response['data'][0]))
-            else:
-                print('Bad slot selection:', response['data'])
-        elif response['raw']:
-            print('Got garbled response:', response['raw'])
-        else:
-            print('No response')
+DEFAULT_PORT = '/dev/ttyUSB0'
 
 
 class Bull:
