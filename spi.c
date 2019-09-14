@@ -10,11 +10,11 @@ uint8_t spi_bytes_in_tx_buf;
 uint8_t spi_bytes_in_rx_buf;
 
 uint8_t spi_busy() {
-  uint8_t bytes_left;
+  uint8_t busy;
   cli();
-  bytes_left = spi_bytes_in_tx_buf;
+  busy = spi_bytes_in_tx_buf & 0x80;
   sei();
-  return bytes_left;
+  return busy;
 }
 
 void spi_busywait_until_done() {
@@ -40,7 +40,8 @@ void spi_send(const uint8_t *buf, uint8_t len) {
     // buf[bytes_left-1], and when bytes_left == 0 we stop.
     spi_buf_tx[(SPIBUFLEN-1)-len + spi_bytes_in_tx_buf] = buf[spi_bytes_in_tx_buf];
   }
-  spi_bytes_in_tx_buf--;
+  spi_bytes_in_tx_buf--; // It was == len when aborting for loop
+  spi_bytes_in_tx_buf |= 0x80; // Use last bit as indicator that we are still sending.
   spi_bytes_in_rx_buf = 0;
 
   spi_enable();
@@ -61,13 +62,14 @@ ISR(SPI_STC_vect) {
   spi_bytes_in_rx_buf++;
 
   // Check if we need to send more bytes.
-  if (spi_bytes_in_tx_buf) {
-    SPDR = spi_buf_tx[(SPIBUFLEN-1) - spi_bytes_in_tx_buf];
+  if (spi_bytes_in_tx_buf & 0x7F) {
+    SPDR = spi_buf_tx[(SPIBUFLEN-1) - (spi_bytes_in_tx_buf & 0x7F)];
     spi_bytes_in_tx_buf--;
   } else {
     // No more bytes. Determine what to do next. Since this might take a while,
     // enable interrupts.
     sei();
+    spi_bytes_in_tx_buf = 0; // Reset the sending bit to indicate we are done.
     spi_finished();
   }
 }

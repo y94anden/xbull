@@ -9,6 +9,9 @@
 #include <stdint.h>
 
 #define SPIBUFLEN 4
+#if SPIBUFLEN > 0x7F
+#error MSB of spi_bytes_in_tx_buf is a flag indicating we are sending.
+#endif
 extern uint8_t spi_buf_rx[SPIBUFLEN];
 extern uint8_t spi_bytes_in_rx_buf;
 
