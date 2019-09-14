@@ -52,6 +52,9 @@ class Bull:
         command = response[1]
         parameter = response[2]
         length = response[3]
+
+        print('Unit 0x%X: ' % address, end='')
+
         if length > 0:
             response += self.serial.read(length)
         data = response[4:-1]
@@ -66,13 +69,11 @@ class Bull:
             self.print('Bad length of response')
             ok = False
 
-        self.print('Unit 0x%X responded' % address)
-
         if command == 0xFF:
             self.print('Error response:', self.escape(data))
             ok = False
         else:
-            self.print('data:', self.escape(data))
+            self.print(self.escape(data))
 
         if full_data:
             return {'address': address,
@@ -152,13 +153,14 @@ if __name__ == '__main__':
                        'eventhough payload is supplied')
     parser.add_argument('-s', '--string', action='store_true', help='Payload '
                         'supplied as string. Joined by space.')
-    parser.add_argument('address', help='Address of device')
+    parser.add_argument('addresses', help='Address(es) of device(s)')
     parser.add_argument('parameter', help='Bull parameter to access')
     parser.add_argument('payload', nargs='*', help='Payload as hex string. When '
                         'supplied, a write will be performed unless -r is supplied')
     args = parser.parse_args()
+    
 
-    address = int(args.address, 0)
+    addresses = [int(address, 0) for address in args.addresses.split()]
     param = int(args.parameter, 0)
     if args.string:
         data = (' '.join(args.payload)).encode()
@@ -167,7 +169,8 @@ if __name__ == '__main__':
     writing = (data and not args.read) or args.write
     b = Bull(args.port)
     b.verbose = 1
-    if writing:
-        b.write(address, param, data)
-    else:
-        b.read(address, param)
+    for address in addresses:
+        if writing:
+            b.write(address, param, data)
+        else:
+            b.read(address, param)
