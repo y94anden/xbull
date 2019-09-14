@@ -1,7 +1,7 @@
 *~
 *.o
 *.elf
-*.hex
+xbull.hex
 flash
 __pycache__/
 .deps/
