@@ -176,9 +176,10 @@ void spi_enable() {
   SPCR =
     (1 << SPIE) | // SPI Interrupt Enable
     (1 << SPE) |  // SPI Enable
+    (1 << SPR0) | // Rate: 0=f/4, 1=f/16, 2=f/64, 3=f/128
     (1 << MSTR); // SPI Master
 }
 
 void spi_disable() {
-  //SPCR = 0;
+  SPCR = 0;
 }

@@ -1,10 +1,15 @@
 #ifndef SPI_H__
 #define SPI_H__
 
+// SPI communication
+//
+// This module can be used for generic SPI communication.
+
+
 #include <stdint.h>
 
-#define SPIBUFLEN 3 // One less than we want to be able to send
-extern uint8_t spi_buf_rx[SPIBUFLEN+1];
+#define SPIBUFLEN 4
+extern uint8_t spi_buf_rx[SPIBUFLEN];
 extern uint8_t spi_bytes_in_rx_buf;
 
 uint8_t spi_busy();

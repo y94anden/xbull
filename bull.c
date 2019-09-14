@@ -45,6 +45,7 @@ const char strBAD_CHECKSUM[]          PROGMEM = "Bad checksum";
 const char strUNHANDLED_COMMAND[]     PROGMEM = "Unhandled command";
 const char strINVALID_LENGTH[]        PROGMEM = "Invalid length";
 const char strPROGRAMMING_MODE_FAIL[] PROGMEM = "Failed programming mode";
+const char strLEDREENABLED[]          PROGMEM = "LED output reenabled";
 const char strLENGTH_MULTIPLE_OF_THREE[] PROGMEM =
   "Length must be a multiple of three";
 
@@ -325,6 +326,10 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
     temp.buf[6] = boot_signature_byte_get(4); // Signature 3
     temp.buf[7] = boot_signature_byte_get(1); // RC Calibration
     bull_data_reply(0x01, param, 8, temp.buf);
+  } else if (param == 0x0B) {
+    // Read SPI == enable LED output again.
+    spi_disable();
+    bull_string_reply(0x01, param, strLEDREENABLED);
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     temp.ui8 = eeReadByte((void*)(0x10) + param);
@@ -423,7 +428,7 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
       search_start(data[0]);
       bull_data_reply(0x81, param, 0, 0); // Will probably be inhibited.
     }
-  } else if (param == 0x0b) {
+  } else if (param == 0x0B) {
     // SPI
     spi_send(data, len);
     spi_busywait_until_done();
