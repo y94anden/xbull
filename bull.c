@@ -387,6 +387,7 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
   } else if (param == 0x02) {
     // Name
     eeWriteBlock((void*)1, data, len < 15 ? len : 15);
+    bull_string_reply(0x81, param, strOK);
   } else if (param == 0x03) {
     // Ignore traffic until quiet for 5 seconds. If payload data is my address,
     // keep listening. This is used to be able to send any binary data to one
