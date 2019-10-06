@@ -11,6 +11,7 @@
 #include "ws2812b_led.h"
 #include "random.h"
 #include "globals.h"
+#include "eeprom.h"
 
 /* This program is written for an Arduino Nano */
 
@@ -51,6 +52,10 @@ int main(void)
   wsled_color(0,10,0);
   wsled_color(0,0,10);
 
+  if (eeReadByte((void*)0x10) & 0x01) {
+    // We should not be listening to UART traffic apparently...
+    ignore_traffic();
+  }
   for (;;) {
     wdt_reset();
     c = uart_getc(500, idler);

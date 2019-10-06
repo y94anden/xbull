@@ -366,7 +366,11 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
 }
 
 void ignore_traffic() {
-  // Ignore traffic until we receive no traffic within 5 seconds.
+  // Ignore traffic until we receive no traffic within 5 seconds
+
+  // Indicate that we are quiet currently. Useful if we reboot via watchdog.
+  eeWriteByte((void*)0x10, 1);
+
   morse_say_P(strDEAF);
   uint8_t *c = &address; // Initiate with any address.
   while (c) {
@@ -374,6 +378,8 @@ void ignore_traffic() {
     wdt_reset();
   }
   morse_say_P(strLISTENING);
+
+  eeWriteByte((void*)0x10, 0); // No longer quiet.
 }
 
 void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
@@ -446,7 +452,7 @@ void bull_handle_write(uint8_t param, uint8_t len, const uint8_t* data) {
   } else if (param >= 0x10 && param < 0x20) {
     // EEPROM parameters
     if(bull_verify_length(param, len, 1)) {
-      eeWriteByte((uint8_t*)(param - 0x10 + 1), data[0]);
+      eeWriteByte((uint8_t*)(param + 0x10), data[0]);
       bull_data_reply(0x81, param, 0, 0);
     }
   } else if (param == 0x20) {

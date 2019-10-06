@@ -25,5 +25,5 @@
 void bull_init();
 int is_bull(unsigned char* data, unsigned int length);
 void handle_bull(unsigned char* data, unsigned int length);
-
+void ignore_traffic();
 #endif
