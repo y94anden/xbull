@@ -14,7 +14,8 @@
 // PC1 Grounding button and source for random bit using ADC.
 // PC5 WS1812b led chain
 //
-// PD4 RS485 direction pin
+// PD2 RS485 direction pin
+// PD4 Debug pin
 
 
 
@@ -31,6 +32,7 @@ void initPorts() {
 
   DDRD = 0;
   DDRD |= (1 << 2);  // Pin 2 output = RS485 direction
+  DDRD |= (1 << 4);  // Pin 4 output = debug
   PORTD = 0;         // No pullup.
 }
 

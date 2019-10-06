@@ -80,7 +80,7 @@ ISR(TIMER2_COMPA_vect) {
   // interrupts can be run.
   sei();
 
-  PORTB |= (1 << 4); // Debug pin
+  PORTD ^= (1 << 4); // Debug pin
 
   time_ms++;
   if (time_ms >= 1000) {
