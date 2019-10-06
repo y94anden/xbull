@@ -153,6 +153,9 @@ if __name__ == '__main__':
                        'eventhough payload is supplied')
     parser.add_argument('-s', '--string', action='store_true', help='Payload '
                         'supplied as string. Joined by space.')
+    parser.add_argument('-o', '--poll', action='store_true')
+    parser.add_argument('-l', '--sleep', type=float, default=0, help='Sleep '
+                        'between polls [ms]')
     parser.add_argument('addresses', help='Address(es) of device(s)')
     parser.add_argument('parameter', help='Bull parameter to access')
     parser.add_argument('payload', nargs='*', help='Payload as hex string. When '
@@ -169,8 +172,13 @@ if __name__ == '__main__':
     writing = (data and not args.read) or args.write
     b = Bull(args.port)
     b.verbose = 1
-    for address in addresses:
-        if writing:
-            b.write(address, param, data)
-        else:
-            b.read(address, param)
+    while True:
+        for address in addresses:
+            if writing:
+                b.write(address, param, data)
+            else:
+                b.read(address, param)
+        if not args.poll:
+            break
+        if args.sleep:
+            time.sleep(args.sleep/1000)
