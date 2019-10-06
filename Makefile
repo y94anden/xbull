@@ -126,6 +126,11 @@ disasm: $(PROJECT).elf
 fuses:
 	$(AVRDUDE_ISP) -U hfuse:w:0xde:m -U lfuse:w:0xf7:m -U efuse:w:0xfd:m
 
+
+.PHONY: bootloader
+bootloader:
+	$(AVRDUDE_ISP) -U optiboot/optiboot_atmega328.hex -U hfuse:w:0xde:m -U lfuse:w:0xf7:m -U efuse:w:0xfd:m
+
 .PHONY: readcal
 readcal:
 	$(AVRDUDE_ISP) -U calibration:r:/dev/stdout:i | head -1
