@@ -272,6 +272,15 @@ uint8_t bull_verify_length(uint8_t param, uint8_t supplied, uint8_t expected) {
 void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
   if (param == 0x01) {
     // Address
+    if (len > 0) {
+      // Read with any payload to use the LED to indicate address
+      morse_clear();
+      for (temp.ui8 = 0; temp.ui8 < address; temp.ui8++) {
+        morse_character('e'); // This is a single dot.
+      }
+      morse_space();
+      morse_space();
+    }
     bull_data_reply(0x01, param, 1, &address);
   } else if (param == 0x02) {
     // Name
