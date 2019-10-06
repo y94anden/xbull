@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from selectors import DefaultSelector, EVENT_READ
 from serial import Serial
 
-DEFAULT_BAUDRATE=115200
+DEFAULT_BAUDRATE=19200
 
 if __name__ == '__main__':
     parser = ArgumentParser('Join several serialports so they seem to be attached to '

@@ -4,7 +4,7 @@
 #include "uart.h"
 #include "hardware.h"
 
-#define BAUD 115200
+#define BAUD 19200
 
 #define RECV_BUFFER_LEN 16
 #define SEND_BUFFER_LEN 16

@@ -12,7 +12,7 @@ DEFAULT_PORT = '/dev/ttyUSB0'
 
 class Bull:
     def __init__(self, port):
-        self.serial = Serial(port, baudrate=115200)
+        self.serial = Serial(port, baudrate=19200)
         self.serial.timeout = 2
         self.verbose = 0
 
