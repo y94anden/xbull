@@ -28,16 +28,17 @@ class Flasher:
     Cmnd_STK_GET_SYNC       =   0x30
     Sync_CRC_EOP            =   0x20
 
-    def __init__(self, bull, address):
+    def __init__(self, bull, address, force=False):
         self.bull = bull
         self.serial = bull.serial
         self.address = address
 
-        # First make sure we have a connection by reading address
-        data = self.bull.read(self.address, 1, full_data=True)
-        if not data['ok']:
-            raise FlashException('No contact with device at address 0x%02X' %
-                            self.address)
+        if not force:
+            # First make sure we have a connection by reading address
+            data = self.bull.read(self.address, 1, full_data=True)
+            if not data['ok']:
+                raise FlashException('No contact with device at address 0x%02X' %
+                                     self.address)
 
         # Next, enter programming mode
         self.enter_programming_mode()
@@ -214,6 +215,10 @@ if __name__ == '__main__':
                         + bull.DEFAULT_PORT, default=bull.DEFAULT_PORT)
     parser.add_argument('-v', '--validate', help='Validate flash with hex file',
                         action='store_true')
+    parser.add_argument('-f', '--force', action='store_true',
+                        help='Program device even though it does not respond. '
+                        'Can be used if device is stuck in bootloader. Note '
+                        'that after power on, bootloader is not active.')
     parser.add_argument('address', help='Address of device')
     parser.add_argument('hexfile', help='File to write or verify against. If '
                         'not specified, the signature bytes are read.',
@@ -223,7 +228,7 @@ if __name__ == '__main__':
     b = bull.Bull(args.port)
 
     address = int(args.address, 0)
-    f = Flasher(b, address)
+    f = Flasher(b, address, force=args.force)
 
     if not args.hexfile:
         f.read_bootloader_version()
