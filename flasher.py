@@ -32,6 +32,7 @@ class Flasher:
         self.bull = bull
         self.serial = bull.serial
         self.address = address
+        self.force = force
 
         if not force:
             # First make sure we have a connection by reading address
@@ -54,14 +55,27 @@ class Flasher:
         self.serial.timeout = 0
         self.bull.write(self.address, 0x04, 1)
 
-        time.sleep(0.5)  # It takes a while for the bootloader to start apparently.
+        time.sleep(0.5)  # It takes a while for the bootloader to start apparently.                
 
-        # Try to get in sync the way avrdude does
-        self.serial.timeout = 0.01
-        self.serial.write(b'0 ')  # Cmnd_STK_GET_SYNC
-        self.serial.read(100)
-        self.serial.write(b'0 ')  # Cmnd_STK_GET_SYNC
-        self.serial.read(100)
+        # Get in sync
+        if self.force:
+            # Try finding bootloader for 30 seconds.
+            print('Press reset until it gets in sync')
+            in_sync = bytes([self.Resp_STK_INSYNC, self.Resp_STK_OK])
+            self.serial.timeout = 1
+            for i in range(30):
+                self.serial.write(b'0 ')  # Cmnd_STK_GET_SYNC
+                response = self.serial.read(100)
+                if response[-2:] == in_sync:
+                    print('Found sync!')
+                    break
+        else:
+            # Try to get in sync the way avrdude does
+            self.serial.timeout = 0.01
+            self.serial.write(b'0 ')  # Cmnd_STK_GET_SYNC
+            self.serial.read(100)
+            self.serial.write(b'0 ')  # Cmnd_STK_GET_SYNC
+            self.serial.read(100)
 
         self.serial.write(b'0 ')  # Cmnd_STK_GET_SYNC
         self.read(2)  # Verify the response
