@@ -53,7 +53,7 @@ class Bull:
         parameter = response[2]
         length = response[3]
 
-        print('Unit 0x%X: ' % address, end='')
+        self.print('Unit 0x%X: ' % address, end='')
 
         if length > 0:
             response += self.serial.read(length)
@@ -177,7 +177,7 @@ if __name__ == '__main__':
             if writing:
                 b.write(address, param, data)
             else:
-                b.read(address, param)
+                b.read(address, param, data)
         if not args.poll:
             break
         if args.sleep:
