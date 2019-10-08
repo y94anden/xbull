@@ -8,3 +8,4 @@ __pycache__/
 version.c
 flash_boot
 !optiboot/optiboot_atmega328.hex
+defaults
