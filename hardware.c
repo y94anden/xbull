@@ -12,6 +12,7 @@
 //
 // PC0 onewire (see thermds18b20.h)
 // PC1 Grounding button and source for random bit using ADC.
+// PC4 DHT22
 // PC5 WS1812b led chain
 //
 // PD2 RS485 direction pin
@@ -29,6 +30,7 @@ void initPorts() {
 
   DDRC = (1 << 5);   // Pin 5 output = WS1812b led chain
   PORTC = (1 << 1);  // Pin 1 pullup = button / random ADC.
+  PORTC |= (1 << 4); // Pin 4 pullup = DHT 11
 
   DDRD = 0;
   DDRD |= (1 << 2);  // Pin 2 output = RS485 direction
@@ -184,4 +186,18 @@ void spi_enable() {
 
 void spi_disable() {
   SPCR = 0;
+}
+
+void dht_pin_low() {
+  DDRC |= (1 << 4);
+  PORTC &= (~(1 << 4));
+}
+
+void dht_pin_input() {
+  DDRC &= (~(1 << 4));
+  PORTC |= (1 << 4);
+}
+
+uint8_t dht_pin() {
+  return PORTC & (1 << 4);
 }

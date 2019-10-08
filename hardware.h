@@ -25,4 +25,9 @@ void programming_mode();
 void spi_enable();
 void spi_disable();
 
+// DHT11 functions
+void dht_pin_low();
+void dht_pin_input();
+uint8_t dht_pin();
+
 #endif

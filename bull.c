@@ -11,6 +11,7 @@
 #include "search.h"
 #include "globals.h"
 #include "spi.h"
+#include "dht11.h"
 #include <stdint.h>
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
@@ -46,6 +47,7 @@ const char strUNHANDLED_COMMAND[]     PROGMEM = "Unhandled command";
 const char strINVALID_LENGTH[]        PROGMEM = "Invalid length";
 const char strPROGRAMMING_MODE_FAIL[] PROGMEM = "Failed programming mode";
 const char strLEDREENABLED[]          PROGMEM = "LED output reenabled";
+const char strCOMMUNICATION_ERROR[]   PROGMEM = "Communication error";
 const char strLENGTH_MULTIPLE_OF_THREE[] PROGMEM =
   "Length must be a multiple of three";
 
@@ -359,6 +361,15 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
     // Read DS18B20 bit
     temp.ui8 = therm_read_bit();
     bull_data_reply(0x01, param, 1, &temp.ui8);
+  } else if (param == 0x24) {
+    // Read DHT 11 data
+    len = dht_read(temp.buf); // Steal variable 'len' for other stuff
+    if (len) {
+      bull_data_reply(0xFF, param, 1, &len);
+      //bull_string_reply(0xFF, param, strCOMMUNICATION_ERROR);
+      return;
+    }
+    bull_data_reply(0x01, param, 4, temp.buf);
   } else {
     // Invalid parameter
     bull_string_reply(0xFF, param, strINVALID_PARAMETER);

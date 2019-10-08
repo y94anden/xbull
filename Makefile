@@ -16,7 +16,8 @@ SRCS = main.c \
        sha256.c \
        search.c \
        globals.c \
-       spi.c
+       spi.c \
+       dht11.c
 
 .PHONY: all
 all: $(PROJECT).hex

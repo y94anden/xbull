@@ -22,6 +22,7 @@
 //      To return last found / currently active device id.
 // 0x22 Read temperature. Supply device as input, or use last found/read.
 // 0x23 Onewire bit, R/W.
+// 0x24 Read DHT11, R.
 void bull_init();
 int is_bull(unsigned char* data, unsigned int length);
 void handle_bull(unsigned char* data, unsigned int length);
