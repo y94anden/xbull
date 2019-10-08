@@ -34,3 +34,26 @@ These pins are used by the system. See `hardware.c` for more info.
                 SPI MISO -|PB4     PB5|- LED / SPI SCK
                                USB
 ```
+
+# Bestyckning
+
+## Datorrum
+Plintar på:
+* PC0 - onewire
+* PC1
+* PC4 - DHT11
+* PC5
+* ADC7
+* 5V
+
+## Pannrum
+Plintar på:
+* PB0
+* PB1
+* PC0 - onewire
+* PC1
+* PC2
+* PC3
+* ADC7
+* 5V
+Kopplat onewire till sensorerna runt pannrummet och i datorrummet.
