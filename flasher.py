@@ -55,20 +55,21 @@ class Flasher:
         self.serial.timeout = 0
         self.bull.write(self.address, 0x04, 1)
 
-        time.sleep(0.5)  # It takes a while for the bootloader to start apparently.                
+        time.sleep(0.5)  # It takes a while for the bootloader to start apparently.
 
         # Get in sync
         if self.force:
             # Try finding bootloader for 30 seconds.
             print('Press reset until it gets in sync')
             in_sync = bytes([self.Resp_STK_INSYNC, self.Resp_STK_OK])
-            self.serial.timeout = 1
-            for i in range(30):
+            self.serial.timeout = 0.5
+            for i in range(60):
                 self.serial.write(b'0 ')  # Cmnd_STK_GET_SYNC
                 response = self.serial.read(100)
                 if response[-2:] == in_sync:
                     print('Found sync!')
                     break
+
         else:
             # Try to get in sync the way avrdude does
             self.serial.timeout = 0.01
@@ -212,12 +213,26 @@ class Flasher:
         time.sleep(0.2)
         address = 0
         block_size = 128
+
+        # Modify first block, so that if the write fail somewhere,
+        # the first command is a JMP to boot loader. Last, rewrite
+        # this block as the original one.
+        # Assembler:
+        # JMP 0x3F00  // Addr in word, 32kb flash - 512b = 0x7e00 = word 0x3f00
+        # as compiled by avr-gcc: 0x0C 94 80 1F
+        first_block = data[:block_size]
+        jmp = bytes([0x0C, 0x94, 0x80, 0x1F])
+        data = jmp + data[4:]
+
         print('About to program device:')
         while data:
             self.program_page(address, data[:block_size])
             data = data[block_size:]
             address += block_size
             print('\rWrote', address, 'of', address + len(data), end='   ')
+
+        # Write the original first block now that we know the rest works
+        self.program_page(0, first_block)
 
         print('\nDone!')
         self.leave_programming_mode()
