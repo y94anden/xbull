@@ -4,11 +4,11 @@ from argparse import ArgumentParser
 from serial import Serial
 from binascii import hexlify
 from datetime import datetime
+
 import time
 import struct
 
-DEFAULT_PORT = '/dev/ttyUSB0'
-
+from port import DEFAULT_PORT
 
 class Bull:
     def __init__(self, port):

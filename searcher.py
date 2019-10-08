@@ -2,6 +2,7 @@
 
 from argparse import ArgumentParser
 import bull
+from port import DEFAULT_PORT
 
 class ResponseGarbage(Exception): pass
 
@@ -53,7 +54,7 @@ class Searcher:
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-p', '--port', help='Serial port to use. Defaults to '
-                        + bull.DEFAULT_PORT, default=bull.DEFAULT_PORT)
+                        + DEFAULT_PORT, default=DEFAULT_PORT)
     parser.add_argument('-s', '--slots', type=int, default=30, help='The '
                         'number of slots to divide the search in. Default 30')
     parser.add_argument('-r', '--rounds', type=int, default=5, help='Number of '

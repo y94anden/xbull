@@ -5,6 +5,7 @@ from binascii import hexlify
 import time
 
 import bull
+from port import DEFAULT_PORT
 
 class FlashException(Exception): pass
 
@@ -241,7 +242,7 @@ class Flasher:
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-p', '--port', help='Serial port to use. Defaults to '
-                        + bull.DEFAULT_PORT, default=bull.DEFAULT_PORT)
+                        + DEFAULT_PORT, default=DEFAULT_PORT)
     parser.add_argument('-v', '--validate', help='Validate flash with hex file',
                         action='store_true')
     parser.add_argument('-f', '--force', action='store_true',
