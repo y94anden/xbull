@@ -3,7 +3,7 @@
 
 // Parameters
 //
-// 0x01 Address of unit, R/W
+// 0x01 Address of unit. Read with any payload blink id on led. R/W
 // 0x02 Name of unit, up to 16 bytes, R/W
 // 0x03 Ignore traffic. Quiet 5s = start listening again, W
 // 0x04 Go into programming mode (optiboot), W
@@ -20,7 +20,8 @@
 // 0x20 Reset 1-wire network. Return 1 if anyone responds.
 // 0x21 Search next unit on 1-wire network. Supply 1 to start new search. Read
 //      To return last found / currently active device id.
-// 0x22 Read temperature. Supply device as input, or use last found/read.
+// 0x22 Read temperature. Input: device, 0x01 for search next after reply or
+//      nothing to return same as last.
 // 0x23 Onewire bit, R/W.
 // 0x24 Read DHT11, R.
 void bull_init();
