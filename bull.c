@@ -355,6 +355,9 @@ void bull_handle_read(uint8_t param, uint8_t len, const uint8_t* data) {
     bull_data_reply2(0x01, param,
                      2, (uint8_t*)&temp.i16,
                      8, (uint8_t*)&therm.device_id);
+    if (len == 1) {
+      therm.device_id = therm_search(&therm.discrepancy_mask);
+    }
   } else if (param == 0x23) {
     // Read DS18B20 bit
     temp.ui8 = therm_read_bit();
