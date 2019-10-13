@@ -131,6 +131,14 @@ class Bull:
         deviceid = hexlify(d[2:][::-1]).decode()
         return temp, deviceid;
 
+    def read_hum_temp(self, address):
+        d = self.read(address, 0x24)
+        # buf[0]: Humidity integral part
+        # buf[1]: Humidity decimal part
+        # buf[2]: Temperature integral part
+        # buf[3]: Temperature decimal part
+        return (d[0] + d[1]/10, d[2] + d[3]/10)
+
     def read_chip_info(self, address):
         data = self.read(address, 0x0A)
         d = dict()
@@ -161,7 +169,7 @@ if __name__ == '__main__':
     parser.add_argument('payload', nargs='*', help='Payload as hex string. When '
                         'supplied, a write will be performed unless -r is supplied')
     args = parser.parse_args()
-    
+
 
     addresses = [int(address, 0) for address in args.addresses.split()]
     param = int(args.parameter, 0)
