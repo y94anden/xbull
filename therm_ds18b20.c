@@ -3,6 +3,8 @@
 #include <util/delay.h>	//Header for _delay_ms()
 #include <avr/interrupt.h>
 
+#define L_ONE ((uint64_t)1)
+
 uint8_t therm_reset() {
   uint8_t i;
 
@@ -171,7 +173,7 @@ uint64_t therm_search(uint64_t* discrepancyMask) {
       //     +-------Time to take the other route (bit = 0). Reset
       //             the mask and go with bit = 0.
 
-      if ( (*discrepancyMask) & (1 << position)) {
+      if ( (*discrepancyMask) & (L_ONE << position)) {
         //Devices have different bits, and the mask is 1.
         //If this is the most significant bit in the mask,
         //we should try the other branch now (bit=0). We
@@ -179,12 +181,12 @@ uint64_t therm_search(uint64_t* discrepancyMask) {
         //are done with the 1-branch.
         //If this is not the most sigificant bit, we need
         //to keep investigating the 1-branch.
-        if ( (*discrepancyMask) < (1 << (position+1))) {
+        if ( (*discrepancyMask) < (L_ONE << (position+1))) {
           //the mask is less than a 1 in the next position =>
           //this is the most significant bit in the mask.
 
           //reset the mask
-          (*discrepancyMask) ^= (1 << position); //Use XOR - we now it is a one
+          (*discrepancyMask) ^= (L_ONE << position); //Use XOR - we now it is a one
           selectedNextBit = 0;
         } else {
           //This is not the most significant bit. Keep investigating
@@ -200,11 +202,11 @@ uint64_t therm_search(uint64_t* discrepancyMask) {
         //already investigated the 1-branch from this position and
         //we should keep investigating the 0-branch.
 
-        if ( (*discrepancyMask) < (1 << position)) {
+        if ( (*discrepancyMask) < (L_ONE << position)) {
           //the mask is less than a 1 in the current position =>
           //we have passed the MSB of the mask => we have found
           //a new discrepancy
-          (*discrepancyMask) |= (1 << position);
+          (*discrepancyMask) |= (L_ONE << position);
           selectedNextBit = 1;
         } else {
           //We have not passed MSB => the 1-branch of this
