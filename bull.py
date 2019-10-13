@@ -124,8 +124,14 @@ class Bull:
         data = struct.pack('I', newtime)
         self.write(address, 0x05, data)
 
-    def read_temp(self, address, autonext=True):
-        d = self.read(address, 0x22, b'\x01' if autonext else None)
+    def read_temp(self, address, sensor=None, autonext=False):
+        if sensor:
+            payload = sensor
+        elif autonext:
+            payload = b'\x01'
+        else:
+            payload = None
+        d = self.read(address, 0x22, payload)
         temp = d[0] + d[1]*0x100
         temp /= 16;
         deviceid = hexlify(d[2:][::-1]).decode()
