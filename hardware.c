@@ -199,5 +199,5 @@ void dht_pin_input() {
 }
 
 uint8_t dht_pin() {
-  return PORTC & (1 << 4);
+  return (PINC & (1 << 4)) >> 4;
 }
