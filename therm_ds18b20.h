@@ -1,4 +1,4 @@
-#include <avr/io.h> 
+#include <avr/io.h>
 #include <stdio.h>
 #define THERM_PORT PORTC
 #define THERM_DDR DDRC

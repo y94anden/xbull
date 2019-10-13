@@ -23,7 +23,7 @@ These pins are used by the system. See `hardware.c` for more info.
                          -|GND      5V|-
          RS485 direction -|PD2    ADC7|-
                          -|PD3    ADC6|-
-                         -|PD4     PC5|- WS1812b led chain
+              Debug pin  -|PD4     PC5|- WS1812b led chain
                          -|PD5     PC4|- DHT11
                          -|PD6     PC3|-
                          -|PD7     PC2|-
